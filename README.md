@@ -185,6 +185,15 @@ Saturday straddle sale (1×, real prices since Mar 2021):
 
 Hedging continuously after the trigger or all day loses the edge; 3× ≈ Deribit standard-margin ceiling for a short straddle.
 
+## Best version, in full (`run_best_weekend.py`)
+
+Sell Sat ATM straddle (1×, gentle recovery 8 Sat / cap 1.5×, one-time perp hedge when ETH is ≥3% from the strike, held to
+07:00 Sun) + buy Sun ATM straddle (1×). From 27 Mar 2021 with $125,411: → $1,053,183 (+46.0%/yr), max DD −17.7%
+(Oct 2024 → Jan 2025, recovered Apr 2025), weekly Sharpe 1.85, 55% of weekends won, longest losing run 5 weekends.
+Sunday buy earned $612k vs Saturday sell $316k; Saturday-only with the same settings: +18%/yr (2024–26 +1.4%/yr).
+The 3% hedge fired on 66/294 Saturdays, helped on 42%, cost $24k overall but cut the worst Saturday from −13% to −5%.
+`results/best_weekend.json` holds every weekend (size, premium, moves, hedge, P&L, account).
+
 ## Layout
 
 ```
@@ -206,6 +215,7 @@ run_daily_vol*.py  daily vol selling   -> results/daily_vol.json
 run_weekend_vol.py weekend calendar    -> results/weekend_vol*.json
 run_sat_mon.py     Sat sell / Mon buy  -> results/sat_mon.json
 run_sat_aggr.py    aggressive recovery + trigger hedge -> results/sat_aggr.json
+run_best_weekend.py best version, every weekend -> results/best_weekend.json
 sim/fetch_daily_iv.py  real daily IVs + hourly bars -> data/daily_atm_iv.csv, data/eth_perp_hourly.csv
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
@@ -231,6 +241,7 @@ python3 run_daily_vol_select.py  # selling daily vol every day: staged selection
 python3 run_weekend_vol.py       # weekend calendar: sell Sat, buy Sun
 python3 run_sat_mon.py           # Saturday sell + recovery details; Monday buy + recovery
 python3 run_sat_aggr.py          # aggressive recovery and delta hedge after a 3% move
+python3 run_best_weekend.py      # best version: weekly table, stats, Saturday-only vs +Sunday
 python3 report/build_report.py   # rebuild results/report.html
 ```
 

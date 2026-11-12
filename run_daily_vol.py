@@ -159,7 +159,9 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
             if log:
                 trades.append(dict(date=str(d.index[i].date()), dow=int(row["dow"]), side="buy", iv=float(iv), rv7=float(row["rv7"]),
                                    prem_rate=buy_info["rate"], move=float(abs(path[-1] / S0 - 1)), size_x=buy_info["size_x"],
-                                   pnl_pct=float(pnl / eq), dd_before=float(1 - eq / hwm), eq_before=float(eq)))
+                                   pnl_pct=float(pnl / eq), dd_before=float(1 - eq / hwm), eq_before=float(eq),
+                                   S0=float(S0), ST=float(path[-1]), signed_move=float(path[-1] / S0 - 1), notional=float(notional_b),
+                                   eth=float(n), premium_usd=float(n * cost), payout_usd=float(n * abs(path[-1] - S0)), pnl_usd=float(pnl)))
         if side == 1 and eq > 0:
             T = 1 / 365
             c, _ = bs(S0, S0, iv, T, "call")
@@ -194,6 +196,8 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
             if wings:
                 pay -= max(kp - ST, 0) + max(ST - kc, 0)
             pnl = n * (net - pay)
+            opt_pnl = pnl
+            hinfo = dict(trig_hour=None, trig_dir=None, trig_price=None, hedge_eth=0.0, hedge_pnl=0.0, hedge_cost=0.0)
             if hedge_trigger is not None:
                 # delta hedge only once ETH has moved `hedge_trigger` from the strike (hourly closes)
                 hs = path[:24]
@@ -209,7 +213,10 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
                         if not on and mv >= hedge_trigger:
                             on = True
                             pnl -= abs(targets[h] - H) * s * trig_cost
+                            hinfo["hedge_cost"] += abs(targets[h] - H) * s * trig_cost
                             H = targets[h]
+                            if hinfo["trig_hour"] is None:
+                                hinfo.update(trig_hour=h, trig_dir="down" if s < S0 else "up", trig_price=float(s), hedge_eth=float(H))
                         elif on and trigger_reset is not None and mv < hedge_trigger * trigger_reset:
                             pnl -= abs(H) * s * trig_cost
                             H, on = 0.0, False
@@ -218,8 +225,10 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
                             H = targets[h]
                     elif H != 0.0:
                         pnl -= abs(H) * s * trig_cost
+                        hinfo["hedge_cost"] += abs(H) * s * trig_cost
                         H = 0.0
                     pnl += H * (path[h + 1] - s)
+                    hinfo["hedge_pnl"] += H * (path[h + 1] - s)
             if hedge:
                 hs = path[:24]
                 Th = (24 - np.arange(24)) / YEAR_H
@@ -248,7 +257,10 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
             if log:
                 trades.append(dict(date=str(d.index[i].date()), dow=int(row["dow"]), side="sell", iv=float(iv), rv7=float(row["rv7"]),
                                    prem_rate=float(rate), move=float(abs(path[-1] / S0 - 1)), size_x=float(notional / base),
-                                   pnl_pct=float(pnl / eq), dd_before=float(1 - eq / hwm), eq_before=float(eq)))
+                                   pnl_pct=float(pnl / eq), dd_before=float(1 - eq / hwm), eq_before=float(eq),
+                                   S0=float(S0), ST=float(path[-1]), signed_move=float(path[-1] / S0 - 1), notional=float(notional),
+                                   eth=float(n), premium_usd=float(n * net), payout_usd=float(n * pay), opt_pnl=float(opt_pnl),
+                                   pnl_usd=float(pnl), max_intraday=float(np.max(np.abs(path / S0 - 1))), **hinfo))
         ret = pnl / eq if eq > 0 else 0.0
         worst = min(worst, ret)
         eq += pnl

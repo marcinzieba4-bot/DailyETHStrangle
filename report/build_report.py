@@ -1203,6 +1203,126 @@ V["AG5_DD"] = pct(AG["cal_cap5"]["full"]["maxdd"], 0)
 V["AG5_W"] = pct(AG["cal_cap5"]["full"]["worst_day"], 0)
 V["AGS_OOS"] = pct(AG["combo"]["Drawdown over 2 Saturdays, cap 3× + 3% hedge"]["OOS"]["cagr"], 1)
 
+# ---- version 16: best weekend version, detailed ----
+BW = json.load(open(os.path.join(ROOT, "results", "best_weekend.json")))
+bst = BW["stats"]
+cmp_rows = []
+for k, v in BW["compare"].items():
+    strong = v["legs"] == "Saturday + Sunday" and v["setting"].startswith("Gentle")
+    nm = f"{v['legs']} · {v['setting']}"
+    nm = f"<strong>{html.escape(nm)}</strong>" if strong else html.escape(nm)
+    f_ = v["full"]
+    cmp_rows.append(f"<tr><th scope='row'>{nm}</th><td class='{'pos' if f_['cagr'] > 0 else 'neg'}'><strong>{pct(f_['cagr'], 1)}</strong></td>"
+                    f"<td class='neg'>{pct(f_['maxdd'], 0)}</td><td>{f_['sharpe']:.2f}</td><td>{pct(v['OOS']['cagr'], 1)}</td>"
+                    f"<td>{pct(v['boot']['cagr_median'], 0)}</td><td class='neg'>{pct(v['boot']['dd_p5'], 0)}</td>"
+                    + "".join(f"<td class='{'pos' if f_['yearly'][str(y)] > 0.5 else ('neg' if f_['yearly'][str(y)] < -0.5 else '')}'>{pct(f_['yearly'][str(y)], 0)}</td>" for y in yrs_e) + "</tr>")
+V["BW_CMP_ROWS"] = "\n".join(cmp_rows)
+V["BW_CMP_HEAD"] = "".join(f"<th scope='col'>{y}{' YTD' if y == yrs_e[-1] else ''}</th>" for y in yrs_e)
+cg_ = BW["compare"]
+so, ss = cg_["Saturday only | Gentle recovery + 3% hedge"], cg_["Saturday + Sunday | Gentle recovery + 3% hedge"]
+V["BW_SO"] = pct(so["full"]["cagr"], 0)
+V["BW_SO_DD"] = pct(so["full"]["maxdd"], 0)
+V["BW_SO_OOS"] = pct(so["OOS"]["cagr"], 1)
+V["BW_SS"] = pct(ss["full"]["cagr"], 0)
+V["BW_SS_DD"] = pct(ss["full"]["maxdd"], 0)
+V["BW_SS_OOS"] = pct(ss["OOS"]["cagr"], 1)
+V["BW_SAT_TOT"] = usd(bst["sat_total"], True)
+V["BW_SUN_TOT"] = usd(bst["sun_total"], True)
+V["BW_HEDGE_TOT"] = usd(bst["hedge_total"], True)
+V["BW_FINAL"] = usd(bst["final"])
+V["BW_TOTAL"] = pct(bst["total_pct"], 0)
+V["BW_CAGR"] = pct(bst["cagr"], 1)
+V["BW_DD"] = pct(bst["maxdd"], 1)
+V["BW_DD_PEAK"] = pd.Timestamp(bst["dd_peak"]).strftime("%d %b %Y")
+V["BW_DD_TROUGH"] = pd.Timestamp(bst["dd_trough"]).strftime("%d %b %Y")
+V["BW_DD_REC"] = pd.Timestamp(bst["dd_recovered"]).strftime("%d %b %Y") if bst["dd_recovered"] else "not yet"
+V["BW_SHARPE"] = f"{bst['sharpe_weekly']:.2f}"
+V["BW_WIN"] = f"{bst['win_weekends']*100:.0f}%"
+V["BW_AW"] = pct(bst["avg_win"], 2)
+V["BW_AL"] = pct(bst["avg_loss"], 2)
+V["BW_BEST"] = f"{pct(bst['best']['week_pct'], 1)} ({usd(bst['best']['week_pnl'], True)}, weekend of {pd.Timestamp(bst['best']['sat']).strftime('%d %b %Y')})"
+V["BW_WORST"] = f"{pct(bst['worst']['week_pct'], 1)} ({usd(bst['worst']['week_pnl'], True)}, weekend of {pd.Timestamp(bst['worst']['sat']).strftime('%d %b %Y')})"
+V["BW_STREAK"] = str(bst["longest_losing"])
+V["BW_SATWIN"] = f"{bst['sat_win']*100:.0f}%"
+V["BW_SUNWIN"] = f"{bst['sun_win']*100:.0f}%"
+V["BW_TRIG"] = f"{bst['triggered']} of {bst['weekends']} ({bst['triggered_share']*100:.0f}%)"
+V["BW_TRIG_DU"] = f"{bst['trig_down']} after a fall, {bst['trig_up']} after a rise"
+V["BW_TRIG_HELP"] = f"{bst['trig_helped']*100:.0f}%"
+V["BW_TRIG_HOUR"] = f"{int(8 + bst['trig_median_hour']) % 24:02d}:00 UTC"
+V["BW_REC"] = f"{bst['rec_share']*100:.0f}%"
+V["BW_NH"] = pct(bst["nohedge"]["cagr"], 1)
+V["BW_NH_DD"] = pct(bst["nohedge"]["maxdd"], 0)
+V["BW_NH_W"] = pct(bst["nohedge"]["worst_day"], 1)
+V["BW_W"] = pct(BW["compare"]["Saturday + Sunday | Gentle recovery + 3% hedge"]["full"]["worst_day"], 1)
+V["BW_PCT"] = " · ".join(f"{k.upper()} {pct(v_, 1)}" for k, v_ in bst["weekend_pct"].items())
+V["BW_AGGR"] = pct(BW["aggr"]["full"]["cagr"], 0)
+V["BW_AGGR_DD"] = pct(BW["aggr"]["full"]["maxdd"], 0)
+V["BW_YR_ROWS"] = "\n".join(
+    f"<tr><th scope='row'>{y['year']}{' YTD' if y['year'] == yrs_e[-1] else ''}</th><td class='{'pos' if y['ret'] > 0 else 'neg'}'><strong>{pct(y['ret'], 1)}</strong></td>"
+    f"<td>{y['weekends']}</td><td>{y['win']*100:.0f}%</td><td class='{'pos' if y['sat'] > 0 else 'neg'}'>{usd(y['sat'], True)}</td>"
+    f"<td class='{'pos' if y['sun'] > 0 else 'neg'}'>{usd(y['sun'], True)}</td><td>{y['trig']}</td>"
+    f"<td class='{'pos' if y['hedge'] > 0 else 'neg'}'>{usd(y['hedge'], True)}</td><td>{y['rec']*100:.0f}%</td><td>{usd(y['end'])}</td></tr>" for y in BW["yearly"])
+months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+mrows_ = []
+for y, ms in BW["monthly"].items():
+    cells = []
+    for m in range(1, 13):
+        v_ = ms.get(str(m))
+        if v_ is None:
+            cells.append("<td></td>")
+        else:
+            cells.append(f"<td class='hm' style='--a:{min(abs(v_), 30)/30:.2f}' data-tone='{'p' if v_ > 0 else 'n'}'>{v_:+.0f}%</td>")
+    mrows_.append(f"<tr><th scope='row'>{y}</th>{''.join(cells)}</tr>")
+V["BW_MONTH_HEAD"] = "".join(f"<th scope='col'>{m}</th>" for m in months)
+V["BW_MONTH_ROWS"] = "\n".join(mrows_)
+# weekly table grouped by year
+wk_groups = []
+weeks_df = pd.DataFrame(BW["weeks"])
+weeks_df["y"] = weeks_df.sat.str[:4]
+for y, g in weeks_df.groupby("y"):
+    rows_ = []
+    for x in g.itertuples():
+        hedge_txt = "—" if pd.isna(x.trig) else f"{int(8 + x.trig) % 24:02d}:00 {'↓' if x.trig_dir == 'down' else '↑'} {abs(x.hedge_eth):,.0f} ETH {'short' if x.hedge_eth < 0 else 'long'}"
+        rows_.append(
+            f"<tr><th scope='row'>{pd.Timestamp(x.sat).strftime('%d %b')}</th><td>{x.eth:,.0f}</td><td>{x.sat_iv:.0f}%</td>"
+            f"<td>{x.size:.2f}×</td><td>{usd(x.sat_prem)}</td><td>{x.sat_move:+.1f}%</td><td>{x.sat_max:.1f}%</td><td>{hedge_txt}</td>"
+            f"<td class='{'' if pd.isna(x.trig) else ('pos' if x.hedge_pnl > 0 else 'neg')}'>{'—' if pd.isna(x.trig) else usd(x.hedge_pnl, True)}</td>"
+            f"<td class='{'pos' if x.sat_pnl > 0 else 'neg'}'>{usd(x.sat_pnl, True)}</td>"
+            f"<td>{'' if x.sun_iv is None or pd.isna(x.sun_iv) else f'{x.sun_iv:.0f}%'}</td><td>{'' if x.sun_cost is None or pd.isna(x.sun_cost) else usd(x.sun_cost)}</td>"
+            f"<td>{'' if x.sun_move is None or pd.isna(x.sun_move) else f'{x.sun_move:+.1f}%'}</td>"
+            f"<td class='{'pos' if x.sun_pnl > 0 else 'neg'}'>{usd(x.sun_pnl, True)}</td>"
+            f"<td class='{'pos' if x.week_pnl > 0 else 'neg'}'><strong>{usd(x.week_pnl, True)}</strong></td>"
+            f"<td class='{'pos' if x.week_pct > 0 else 'neg'}'>{x.week_pct:+.1f}%</td><td>{usd(x.equity)}</td></tr>")
+    tot = g.week_pnl.sum()
+    wk_groups.append(f"<details{' open' if y == weeks_df.y.max() else ''}><summary>{y}: {len(g)} weekends, {usd(tot, True)}, won {(g.week_pnl > 0).mean()*100:.0f}%, "
+                     f"account {usd(g.equity.iloc[-1])} at year end</summary><div class='scroll'><table class='log'><thead><tr>"
+                     "<th>Saturday</th><th>ETH 08:00</th><th>Sat IV</th><th>Size</th><th>Sat premium</th><th>Sat move</th><th>Sat max move</th><th>3% hedge</th><th>Hedge P&amp;L</th>"
+                     "<th>Saturday P&amp;L</th><th>Sun IV</th><th>Sun cost</th><th>Sun move</th><th>Sunday P&amp;L</th><th>Weekend</th><th>Weekend %</th><th>Account</th>"
+                     f"</tr></thead><tbody>{''.join(rows_)}</tbody></table></div></details>")
+V["BW_WEEKS"] = "\n".join(wk_groups)
+ex = BW["example"]
+V["EX_DATE"] = pd.Timestamp(ex["date"]).strftime("%A %d %B %Y")
+V["EX_K"] = f"${ex['strike']:,.2f}"
+V["EX_IV"] = f"{ex['iv']:.0f}%"
+V["EX_SIZE"] = f"{ex['size']:.2f}×"
+V["EX_NOT"] = usd(ex["notional"])
+V["EX_ETH"] = f"{ex['eth']:.0f}"
+V["EX_PREM"] = usd(ex["premium"], True)
+V["EX_TRIG_T"] = f"{int(8 + ex['trig_hour']) % 24:02d}:00 UTC"
+V["EX_TRIG_P"] = f"${ex['trig_price']:,.2f}"
+V["EX_TRIG_PCT"] = pct((ex["trig_price"] / ex["strike"] - 1) * 100, 1)
+V["EX_HEDGE"] = f"{abs(ex['hedge_eth']):.0f} ETH {'long' if ex['hedge_eth'] > 0 else 'short'}"
+V["EX_END"] = f"${ex['path'][-1]:,.2f}"
+V["EX_END_PCT"] = pct((ex["path"][-1] / ex["strike"] - 1) * 100, 1)
+V["EX_PAY"] = usd(-ex["payout"], True)
+V["EX_OPT"] = usd(ex["opt_pnl"], True)
+V["EX_HPNL"] = usd(ex["hedge_pnl"], True)
+V["EX_HCOST"] = usd(-ex["hedge_cost"], True)
+V["EX_SAT"] = usd(ex["sat_pnl"], True)
+V["EX_SAT_PCT"] = pct(ex["sat_pnl"] / ex["eq_before"] * 100, 1)
+V["EX_NH_PCT"] = pct(ex["nohedge_pct"], 1)
+V["EX_EQ"] = usd(ex["eq_before"])
+
 # ---- chart data ----
 data = dict(
     strip=strip,
@@ -1218,6 +1338,8 @@ data = dict(
              B=PU["windows_long"]["0.22|B"]["series"]["pnl"], dd=PU["windows_long"]["0.22|plain"]["series"]["dd"],
              szB=PU["windows_long"]["0.22|B"]["series"]["max_size"], hodl=PU["windows_long"]["0.22|plain"]["series"]["hodl"]),
     wk=dict(date=WS["dates"], simple=WS["series_simple"], rec8=WS["series_rec8"]),
+    best=dict(date=BW["dates"], eq=[round(v_ / 1000, 1) for v_ in BW["series"]], dd=BW["dd_series"], price=[round(v_ / 1000, 1) for v_ in BW["series"]],
+              hist=BW["hist"], ex=dict(path=BW["example"]["path"], k=BW["example"]["strike"], trig=BW["example"]["trig_hour"])),
     aggr=dict(date=dh["dates"], h=dh["series"], sa=da["series"], cg=dc["series"], ca=dca["series"]),
     satmon=dict(date=sr_["dates"], sp=sp_["series"], sr=sr_["series"], mp=mp_["series"], mr=mr_["series"]),
     sathist=dict(plain=sp_["hist"], rec=sr_["hist"]),
