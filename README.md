@@ -162,6 +162,14 @@ history API) plus hourly ETH-PERP bars. Components chosen on 2021–23, tested o
   max DD −18%; robust to costs (+32% at 5% from mark). Optional recovery (8 Saturdays, cap 1.5×): +46%/yr, DD −21%.
 * t-stats ≈2.7–2.8 per leg (~290 trades), Sunday profit concentrated in rare big moves; pattern found by searching weekdays.
 
+## Saturday sell with recovery sizing, Monday buy with recovery (`run_sat_mon.py`)
+
+* Sell Sat straddle, 1×, recovery (extra = drawdown / (8 × premium rate), cap 1.5×): +18.6%/yr since Mar 2021, max DD −22%
+  (no recovery +16.4%, −17%); 71% of Saturdays won; worst Saturday −11.5% (ETH +13.8%, 16 Jul 2022). 2021–23 +37%/yr,
+  2024–26 only +3%/yr (2024 −10%, 2026 −6.5%). Recovery active 65% of Saturdays; adds return ≈ adds drawdown (Sharpe ~flat).
+* Buy Mon→Tue straddle: +0.04%/trade after costs (t 0.3) → no edge; +0.7%/yr plain, −4.3%/yr with recovery (DD −57%).
+  Only Sunday buying has an edge (t 2.7). Adding Monday to Sat-sell + Sun-buy lowers Sharpe (1.35 vs 1.58).
+
 ## Layout
 
 ```
@@ -181,6 +189,7 @@ run_straddle_hedge.py straddles + hedge -> results/straddle_hedge.json
 run_long_straddle.py buy daily straddles -> results/long_straddle.json
 run_daily_vol*.py  daily vol selling   -> results/daily_vol.json
 run_weekend_vol.py weekend calendar    -> results/weekend_vol*.json
+run_sat_mon.py     Sat sell / Mon buy  -> results/sat_mon.json
 sim/fetch_daily_iv.py  real daily IVs + hourly bars -> data/daily_atm_iv.csv, data/eth_perp_hourly.csv
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
@@ -204,6 +213,7 @@ python3 run_long_straddle.py     # buy daily straddles with loss-recovery size-u
 python3 sim/fetch_daily_iv.py    # download real daily-option IVs + hourly bars (~40 min)
 python3 run_daily_vol_select.py  # selling daily vol every day: staged selection
 python3 run_weekend_vol.py       # weekend calendar: sell Sat, buy Sun
+python3 run_sat_mon.py           # Saturday sell + recovery details; Monday buy + recovery
 python3 report/build_report.py   # rebuild results/report.html
 ```
 

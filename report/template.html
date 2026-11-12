@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of %%ASOF%%</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest question first: a strategy that sells daily ETH volatility, with delta hedging and loss recovery tested. It is built from the real traded prices of Deribit's daily options. Next come buying daily straddles, the yearly straddle and put ladders, and the earlier ideas. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
+  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page answers your latest question first: a detailed look at selling the Saturday daily straddle with recovery sizing, and a test of buying the Monday straddle with recovery sizing. Both use real Deribit daily-option prices. Next comes the weekend calendar these come from, then the earlier ideas. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>%%ETH%%</b></span>
     <span>Daily ATM IV <b>%%DAILY_IV%%%</b></span>
@@ -138,15 +138,130 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: selling daily vol only works on Saturdays. Pair it with buying Sunday's straddle</h2>
+  <h2 id="v-h">Bottom line: sell Saturday with a gentle recovery rule, but pair it with buying Sunday, not Monday</h2>
   <ul>
-    <li><strong>At real traded prices, selling the daily ATM straddle every day lost money in 2022–2026.</strong> Hourly delta hedging, price filters, protective wings and recovery sizing did not fix it (best hedged version: %%WV_EVERY_HEDGED%% a year). Deribit's daily options were priced about %%WE_RATIO%%× my earlier estimate, so ETH moved more than they paid for.</li>
-    <li><strong>One day is the exception, and one day is the mirror image.</strong> Saturday 08:00 → Sunday 08:00 straddles were overpriced: the seller kept about 20% of the premium. Sunday 08:00 → Monday 08:00 straddles were underpriced: the buyer earned about 23%. That window includes the CME futures reopening and Asia's Monday.</li>
-    <li><strong>The strategy is to sell Saturday's straddle and buy Sunday's straddle</strong>, 1× notional each, with no delta hedge. It made %%WS_IS%% a year in 2021–23, where it was chosen, and <strong>%%WS_OOS%% a year in 2024–26</strong>, which it never saw, with a %%WS_OOS_DD%% worst drop. Over the full period: %%WS_FULL%% a year, %%WS_DD%% worst drop. 2026 so far: %%WS_2026%%.</li>
-    <li><strong>Hedging and recovery:</strong> an hourly delta hedge lowered returns on both legs. A gentle recovery rule on the Saturday sell (win back the drawdown over about 8 Saturdays, size capped at 1.5×) made %%WS_R8%% a year with a %%WS_R8_DD%% worst drop: a little more return for a little more risk.</li>
-    <li><strong>Caveats:</strong> about 290 trades per leg (t-stats %%WS_SAT_T%% and %%WS_SUN_T%%), found by looking at every weekday, and the Sunday leg relies on rare big moves. Start at 0.5× notional and scale up only if the pattern continues.</li>
+    <li><strong>Selling Saturday's straddle with recovery sizing made %%SR_CAGR%% a year since Mar 2021, with a %%SR_DD%% worst drop</strong> (no recovery: %%SP_CAGR%%, %%SP_DD%%). $125k would be about %%SR_FINAL%%. It won %%SR_WIN%% of Saturdays, averaging %%SR_AW%% on wins and %%SR_AL%% on losses. The worst Saturday was a 14% ETH move: −11.5% of the account.</li>
+    <li><strong>On its own it has faded.</strong> In 2024–26 it made only %%SAT_OOS%% a year (%%SAT_IS%% in 2021–23); 2024 and 2026 lost. The recovery rule was active on %%SR_RECSHARE%% of Saturdays, at %%SR_RECSIZE%% average size. It adds a little return for a deeper drawdown and does not improve the risk-adjusted result.</li>
+    <li><strong>Buying the Monday → Tuesday straddle has no edge</strong> (%%MON_MEAN%% per trade after costs, t-stat %%MON_T%%; won %%MON_WIN%% of trades). Plain it made %%MON_PLAIN%% a year with a %%MON_PLAIN_DD%% drop. With recovery sizing it made %%MON_REC%% with a %%MON_REC_DD%% drop: it was sized up %%MON_RECSHARE%% of the time and lost more. Adding it to the weekend calendar lowered the risk-adjusted return (Sharpe %%C3_SH%% vs %%C2_SH%%).</li>
+    <li><strong>The pairing that works is Saturday sell + Sunday buy.</strong> With the gentle Saturday recovery rule it made %%CAL_REC%% a year (%%CAL_REC_OOS%% in 2024–26), worst drop %%CAL_REC_DD%%. Sunday is the only day where buying had a real edge (t-stat %%SUN_T2%%).</li>
 
     </ul>
+</section>
+
+<section aria-labelledby="sat-h">
+  <h2 id="sat-h">Selling Saturday's straddle with recovery sizing: the details</h2>
+  <p><strong>The trade.</strong> Every Saturday at 08:00 UTC, sell the ATM put and ATM call that expire Sunday 08:00 UTC, on a notional equal to the account (1×). No delta hedge; let them expire. <strong>Recovery sizing:</strong> while the account is below its previous high, sell extra so that the extra premium alone would win back the gap over about 8 Saturdays. The extra notional is the drawdown ÷ (8 × premium as a % of notional), and total size is capped at 1.5× normal. Back to 1× at a new high. Real Deribit prices from Mar 2021, sold 1.5% below fair value, 0.03% fees per leg. 294 Saturdays.</p>
+  <p>Example on %%SELL%%: the account has slipped to $115k from a $125k high, and Saturday's straddle pays 1.25% of notional. Extra = $10k ÷ (8 × 1.25%) = $100k of notional. Normal is $115k, so the total would be $215k, but the cap limits it to 1.5 × $115k = $172.5k.</p>
+  <h3>Year by year</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Year</th><th scope="col">Saturdays</th><th scope="col">Won</th><th scope="col">Avg premium, % of notional</th><th scope="col">Avg ETH move</th><th scope="col">No recovery</th><th scope="col">With recovery</th><th scope="col">On %%SELL%%</th><th scope="col">Saturdays sized up</th><th scope="col">Worst Saturday</th></tr></thead>
+      <tbody>
+%%SAT_YR_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>The seller wins when the premium is bigger than ETH's Saturday move. That happened clearly in 2021–2023 and 2025. In 2024 and so far in 2026 the average move was bigger than the premium, and the strategy lost. With recovery the account made %%SR_CAGR%% a year (no recovery %%SP_CAGR%%), turning $125k into about %%SR_FINAL%% (no recovery %%SP_FINAL%%).</p>
+  <div class="card">
+    <div class="legend" aria-hidden="true"><span><i class="key-line" style="background:var(--s1)"></i>Account value, $100k start</span></div>
+    <div class="chart" id="satts" role="img" aria-label="Account value from 2021 for selling Saturday with and without recovery, and buying Monday with and without recovery."></div>
+  </div>
+  <div class="two">
+    <div>
+      <h3>Each Saturday</h3>
+      <p>Median Saturday: %%SR_MED%% of the account. Winners average %%SR_AW%% and losers %%SR_AL%%. 1 Saturday in 20 lost %%SR_P5%% or more, and 1 in 100 lost %%SR_P1%% or more. The premium averaged %%SR_PREM%% of notional against an average move of %%SR_MOVE%%.</p>
+      <div class="chart" id="sathist" role="img" aria-label="Distribution of Saturday results as % of the account."></div>
+    </div>
+    <div>
+      <h3>Worst Saturdays (with recovery)</h3>
+      <div class="scroll card">
+        <table>
+          <thead><tr><th scope="col">Saturday</th><th scope="col">ETH move</th><th scope="col">Premium</th><th scope="col">IV</th><th scope="col">Size</th><th scope="col">Account</th></tr></thead>
+          <tbody>
+%%SAT_WORST_ROWS%%
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <h3>Drawdowns (with recovery)</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Peak</th><th scope="col">Low point</th><th scope="col">Back to the peak</th><th scope="col">Depth</th><th scope="col">Weeks</th></tr></thead>
+      <tbody>
+%%SAT_DD_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>The longest drawdown, from Jan 2024, took 87 weeks to recover. The recovery rule was on for almost all of 2024 and 2026, so it sold 1.5× size through the weakest period. That is why it deepens the worst drop from −17% to −22%.</p>
+  <h3>Recovery settings compared</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Rule</th><th scope="col">2021–23: per year / worst drop</th><th scope="col">2024–26 (untouched)</th><th scope="col">Full period, per year</th><th scope="col">Worst drop</th><th scope="col">Sharpe</th><th scope="col">Worst Saturday</th></tr></thead>
+      <tbody>
+%%SAT_GRID_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Every recovery setting adds 1–8 points a year and deepens the worst drop by about as much. Sharpe stays near 1.1–1.2, so recovery sizing is extra leverage used while you are down, not an improvement. The aggressive setting looks best in 2021–23 (2 Saturdays, cap 3×) but has the deepest drop afterwards (−34%). A cap of 1.5× over 8 Saturdays is a reasonable middle.</p>
+  <div class="two">
+    <div class="scroll card">
+      <table>
+        <thead><tr><th scope="col">With recovery, full period</th><th scope="col">Per year</th><th scope="col">Worst drop</th><th scope="col">Sharpe</th></tr></thead>
+        <tbody>
+%%SAT_SENS_ROWS%%
+        </tbody>
+      </table>
+    </div>
+    <div class="scroll card">
+      <table>
+        <thead><tr><th scope="col">300 resampled 2-year paths</th><th scope="col">Median per year</th><th scope="col">Worst 5%</th><th scope="col">Best 5%</th><th scope="col">Lost money</th><th scope="col">Median worst drop</th><th scope="col">Worst 5% drop</th></tr></thead>
+        <tbody>
+%%SAT_BOOT_ROWS%%
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="note">Margin: on Deribit standard margin a short ATM straddle needs about 15% of the ETH notional per leg plus the premium, roughly 32% of notional. That is about 32% of the account at 1× and 48% at the 1.5× cap. The t-stat of the Saturday edge is %%SAT_T%% over 294 trades.</p>
+
+  <h2 id="mon-h" style="margin-top:24px">Buying Monday's straddle with recovery sizing</h2>
+  <p>Every Monday 08:00 UTC, buy the ATM straddle expiring Tuesday 08:00 UTC at 1× notional, bought 1.5% above fair value plus fees. Recovery sizing for a buyer: while below the high, buy extra so that a win of one premium (a move of twice the premium) on the extra would recover the gap over K Mondays, capped.</p>
+  <h3>Buying each weekday's straddle, per trade after costs</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Window</th><th scope="col">Average, % of notional</th><th scope="col">t-stat</th><th scope="col">Won</th>%%BUY_DOW_HEAD%%</tr></thead>
+      <tbody>
+%%BUY_DOW_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Only Sunday is clearly positive for the buyer. Monday is indistinguishable from zero: positive in 2021, 2022 and 2024, negative in 2023 and 2026. Buying Saturday is the worst trade on the board, which is the mirror image of why selling it works.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Monday buy version</th><th scope="col">2021–23: per year / worst drop</th><th scope="col">2024–26</th><th scope="col">Full period, per year</th><th scope="col">Worst drop</th>%%COMBO_HEAD%%</tr></thead>
+      <tbody>
+%%MON_GRID_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Every recovery setting made Monday buying worse. With no edge, a buyer who sizes up after losses mostly buys more of a losing trade. The 4-Monday, 2× version was sized up %%MON_RECSHARE%% of the time, and in resampled 2-year paths it fell more than 50% in %%MON_BOOT_REC_DD50%% of them. Hourly delta hedging (gamma scalping) also lost.</p>
+  <h3>Adding Monday to the weekend calendar</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Combination</th><th scope="col">2021–23: per year / worst drop</th><th scope="col">2024–26</th><th scope="col">Full period</th><th scope="col">Worst drop</th><th scope="col">Sharpe</th>%%COMBO_HEAD%%</tr></thead>
+      <tbody>
+%%COMBO_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Adding the Monday buy raised 2022 but deepened 2023 and 2026, and lowered the Sharpe ratio. Adding Monday recovery on top lifts the headline return but pushes the worst drop to about −41%. It is the same leverage-when-down effect, applied to a trade with no edge.</p>
+  <h3>What to do with this</h3>
+  <ol class="steps">
+    <li><strong>If you sell Saturday, also buy Sunday.</strong> Saturday alone made only about 3% a year in 2024–26. The Sunday buy is what kept the calendar strong in those years.</li>
+    <li><strong>Use recovery sizing gently, or not at all:</strong> 8 Saturdays, cap 1.5×. It is extra size while you are down, so start the whole thing at 0.5× notional.</li>
+    <li><strong>Skip the Monday buy, with or without recovery.</strong> There is no edge to recover with.</li>
+    <li><strong>Watch the Saturday edge.</strong> It weakened in 2024 and 2026. If the Saturday premium keeps coming in below the Saturday move for 2–3 more months, drop the Saturday leg and keep only the Sunday buy, which was positive every year.</li>
+  </ol>
 </section>
 
 <section aria-labelledby="wv-h">
@@ -1206,7 +1321,46 @@ function drawWkTS() {
     tipRow(tip, "With recovery", "$" + S.rec8[i].toFixed(0) + "k");
   });
 }
-function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); drawSdTS(); drawPuTS(); drawLevTS(); drawWkTS(); }
+function drawSatTS() {
+  const S = D.satmon;
+  S.price = S.sr;
+  const pn = { dom: [0, 400], ticks: [0, 100, 200, 300, 400], fmt: v => "$" + v + "k", h: 100 };
+  drawTS("satts", S, [
+    Object.assign({ key: "sp", title: "Sell Saturday, no recovery", color: "var(--s1)" }, pn),
+    Object.assign({ key: "sr", title: "Sell Saturday + recovery (8 Saturdays, cap 1.5×)", color: "var(--s1)" }, pn),
+    Object.assign({ key: "mp", title: "Buy Monday, no recovery", color: "var(--s2)" }, pn),
+    Object.assign({ key: "mr", title: "Buy Monday + recovery (4 Mondays, cap 2×)", color: "var(--s2)" }, pn),
+  ], (tip, i) => {
+    tip.lastChild && tip.removeChild(tip.lastChild);
+    const f = v => "$" + v.toFixed(0) + "k";
+    tipRow(tip, "Sat sell", f(S.sp[i]), "var(--s1)");
+    tipRow(tip, "Sat sell + recovery", f(S.sr[i]), "var(--s1)");
+    tipRow(tip, "Mon buy", f(S.mp[i]), "var(--s2)");
+    tipRow(tip, "Mon buy + recovery", f(S.mr[i]), "var(--s2)");
+  });
+}
+function drawSatHist() {
+  const host = document.getElementById("sathist");
+  host.querySelectorAll("svg,.tip").forEach(n => n.remove());
+  const H = D.sathist.rec, W = host.clientWidth, L = 34, R = 8, T = 10, B = 28, h = 170;
+  const n = H.length, max = Math.max(...H);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${h}`, width: W, height: h }, host);
+  const bw = (W - L - R) / n;
+  const y = v => T + (1 - v / max) * (h - T - B);
+  [0, Math.round(max / 2), max].forEach(v => {
+    svgEl("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--rule)", "stroke-width": 1 }, svg);
+    const t = svgEl("text", { x: L - 5, y: y(v) + 4, "text-anchor": "end" }, svg); t.textContent = v;
+  });
+  const tip = makeTip(host);
+  H.forEach((v, i) => {
+    const lo = -15 + i, x = L + i * bw;
+    const r = svgEl("rect", { x: x + 1, y: y(v), width: Math.max(bw - 2, 1), height: Math.max(h - B - y(v), 0), rx: 2, fill: lo < 0 ? "var(--neg)" : "var(--s1)", "fill-opacity": 0.75 }, svg);
+    r.addEventListener("pointermove", e => { tip.replaceChildren(); tipRow(tip, (lo === -15 ? "≤ " : "") + lo + "% to " + (lo + 1) + "%", v + " Saturdays"); tip.hidden = false; const b = host.getBoundingClientRect(); placeTip(tip, host, e.clientX - b.left, e.clientY - b.top); });
+    r.addEventListener("pointerleave", () => { tip.hidden = true; });
+    if (lo % 5 === 0) { const t = svgEl("text", { x: x, y: h - B + 16, "text-anchor": "middle" }, svg); t.textContent = (lo > 0 ? "+" : lo < 0 ? "−" : "") + Math.abs(lo) + "%"; }
+  });
+}
+function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); drawSdTS(); drawPuTS(); drawLevTS(); drawWkTS(); drawSatTS(); drawSatHist(); }
 drawAll();
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 120); });
 </script>

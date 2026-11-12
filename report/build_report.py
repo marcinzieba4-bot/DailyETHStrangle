@@ -1026,6 +1026,103 @@ V["WS_EVERY"] = pct(WS and [x for x in st1 if x["name"] == "Sell every day"][0][
 V["WS_EVERY_IS"] = pct([x for x in st1 if x["name"] == "Sell every day"][0]["IS"]["cagr"], 0)
 V["LG_PAY_TEXT"] = f"{LG['edge']['payback_ratio']*100:.0f}%"
 
+# ---- version 14: Saturday sell with recovery, Monday buy with recovery ----
+SM = json.load(open(os.path.join(ROOT, "results", "sat_mon.json")))
+sp_, sr_ = SM["sat_plain"], SM["sat_rec"]
+def yr_rows(a, b_):
+    rows_ = []
+    for x, y_ in zip(a["yearly"], b_["yearly"]):
+        rows_.append(f"<tr><th scope='row'>{x['year']}{' YTD' if x['year'] == 2026 else ''}</th><td>{x['trades']}</td><td>{x['win']*100:.0f}%</td>"
+                     f"<td>{x['prem']:.2f}%</td><td>{x['move']:.2f}%</td>"
+                     f"<td class='{'pos' if x['ret'] > 0 else 'neg'}'>{pct(x['ret'], 1)}</td>"
+                     f"<td class='{'pos' if y_['ret'] > 0 else 'neg'}'><strong>{pct(y_['ret'], 1)}</strong></td><td>{usd(y_['usd'], True)}</td>"
+                     f"<td>{y_['in_rec']*100:.0f}%</td><td class='neg'>{pct(y_['worst'], 1)}</td></tr>")
+    return "\n".join(rows_)
+V["SAT_YR_ROWS"] = yr_rows(sp_, sr_)
+V["SAT_DD_ROWS"] = "\n".join(
+    f"<tr><th scope='row'>{pd.Timestamp(x['start']).strftime('%d %b %Y')}</th><td>{pd.Timestamp(x['trough']).strftime('%d %b %Y')}</td>"
+    f"<td>{pd.Timestamp(x['recovered']).strftime('%d %b %Y') if x['recovered'] else 'not yet'}</td><td class='neg'>{pct(x['depth'], 1)}</td><td>{x['weeks']:.0f}</td></tr>"
+    for x in sr_["drawdowns"])
+V["SAT_WORST_ROWS"] = "\n".join(
+    f"<tr><th scope='row'>{pd.Timestamp(x['date']).strftime('%a %d %b %Y')}</th><td>{x['move']:.1f}%</td><td>{x['prem']:.2f}%</td><td>{x['iv']:.0f}%</td>"
+    f"<td>{x['size']:.2f}×</td><td class='neg'>{pct(x['pnl'], 1)}</td></tr>" for x in sr_["worst"])
+grid_pick = ["No recovery", "Recover over 2 Saturdays, cap 1.5x", "Recover over 4 Saturdays, cap 1.5x", "Recover over 8 Saturdays, cap 1.25x",
+             "Recover over 8 Saturdays, cap 1.5x", "Recover over 8 Saturdays, cap 2.0x", "Recover over 8 Saturdays, cap 3.0x",
+             "Recover over 12 Saturdays, cap 1.5x", "Recover over 2 Saturdays, cap 3.0x"]
+gmap = {x["name"]: x for x in SM["sat_grid"]}
+V["SAT_GRID_ROWS"] = "\n".join(
+    f"<tr><th scope='row'>{html.escape(n.replace('x', '×'))}{' (recommended)' if n == 'Recover over 8 Saturdays, cap 1.5x' else ''}</th>"
+    f"<td>{pct(gmap[n]['IS']['cagr'], 1)} / {pct(gmap[n]['IS']['maxdd'], 0)}</td><td><strong>{pct(gmap[n]['OOS']['cagr'], 1)}</strong> / {pct(gmap[n]['OOS']['maxdd'], 0)}</td>"
+    f"<td>{pct(gmap[n]['full']['cagr'], 1)}</td><td class='neg'>{pct(gmap[n]['full']['maxdd'], 0)}</td><td>{gmap[n]['full']['sharpe']:.2f}</td>"
+    f"<td class='neg'>{pct(gmap[n]['full']['worst_day'], 1)}</td></tr>" for n in grid_pick)
+V["SAT_SENS_ROWS"] = "".join(f"<tr><th scope='row'>{html.escape(k)}</th><td>{pct(v['cagr'], 1)}</td><td class='neg'>{pct(v['maxdd'], 0)}</td><td>{v['sharpe']:.2f}</td></tr>"
+                             for k, v in SM["sat_sens"].items())
+sb_ = SM["sat_boot"]
+V["SAT_BOOT_ROWS"] = "".join(f"<tr><th scope='row'>{k}</th><td>{pct(v['cagr_median'], 1)}</td><td>{pct(v['cagr_p5'], 1)}</td><td>{pct(v['cagr_p95'], 1)}</td>"
+                             f"<td>{v['loss_2y']*100:.0f}%</td><td class='neg'>{pct(v['dd_median'], 0)}</td><td class='neg'>{pct(v['dd_p5'], 0)}</td></tr>" for k, v in sb_.items())
+for key, d_ in (("SP", sp_), ("SR", sr_)):
+    V[f"{key}_CAGR"] = pct(d_["summary"]["cagr"], 1)
+    V[f"{key}_DD"] = pct(d_["summary"]["maxdd"], 0)
+    V[f"{key}_FINAL"] = usd(d_["final_usd"])
+    V[f"{key}_WIN"] = f"{d_['win']*100:.0f}%"
+    V[f"{key}_AW"] = pct(d_["avg_win"], 2)
+    V[f"{key}_AL"] = pct(d_["avg_loss"], 2)
+    V[f"{key}_P5"] = pct(d_["pnl_pct"]["p5"], 1)
+    V[f"{key}_P1"] = pct(d_["pnl_pct"]["p1"], 1)
+    V[f"{key}_MED"] = pct(d_["pnl_pct"]["p50"], 2)
+V["SR_RECSHARE"] = f"{sr_['rec_share']*100:.0f}%"
+V["SR_RECSIZE"] = f"{sr_['rec_size_avg']:.2f}×"
+V["SR_PREM"] = f"{sr_['prem_avg']:.2f}%"
+V["SR_MOVE"] = f"{sr_['move_avg']:.2f}%"
+V["SAT_IS"] = pct(gmap["Recover over 8 Saturdays, cap 1.5x"]["IS"]["cagr"], 0)
+V["SAT_OOS"] = pct(gmap["Recover over 8 Saturdays, cap 1.5x"]["OOS"]["cagr"], 0)
+V["SAT_OOS_PLAIN"] = pct(gmap["No recovery"]["OOS"]["cagr"], 1)
+st_ = SM["sat_stats"]
+V["SAT_T"] = f"{st_['t']:.1f}"
+cb = SM["combos"]
+V["CAL_REC"] = pct(cb["Sell Sat + buy Sun, recovery on Sat"]["full"]["cagr"], 0)
+V["CAL_REC_DD"] = pct(cb["Sell Sat + buy Sun, recovery on Sat"]["full"]["maxdd"], 0)
+V["CAL_REC_OOS"] = pct(cb["Sell Sat + buy Sun, recovery on Sat"]["OOS"]["cagr"], 0)
+# Monday
+bd = SM["buy_by_dow"]
+V["BUY_DOW_ROWS"] = "\n".join(
+    f"<tr><th scope='row'>Buy {k} → {['Tue','Wed','Thu','Fri','Sat','Sun','Mon'][i]}</th><td class='{'pos' if v['mean'] > 0 else 'neg'}'>{v['mean']:+.2f}%</td>"
+    f"<td>{v['t']:+.1f}</td><td>{v['win']*100:.0f}%</td>" + "".join(f"<td class='{'pos' if v['by_year'][str(y)] > 0 else 'neg'}'>{v['by_year'][str(y)]:+.2f}%</td>" for y in yrs_e) + "</tr>"
+    for i, (k, v) in enumerate(bd.items()))
+V["BUY_DOW_HEAD"] = "".join(f"<th scope='col'>{y}</th>" for y in yrs_e)
+mg = {x["name"]: x for x in SM["mon_grid"]}
+mpick = ["No recovery", "No recovery, 0.5x", "Recover over 1 trades, cap 2.0x", "Recover over 2 trades, cap 1.5x", "Recover over 4 trades, cap 1.5x",
+         "Recover over 4 trades, cap 2.0x", "Recover over 8 trades, cap 2.0x", "Recover over 8 trades, cap 3.0x", "Hedged hourly (gamma scalping)"]
+V["MON_GRID_ROWS"] = "\n".join(
+    f"<tr><th scope='row'>{html.escape(n.replace('x', '×').replace('1 trades', '1 trade'))}</th>"
+    f"<td>{pct(mg[n]['IS']['cagr'], 1)} / {pct(mg[n]['IS']['maxdd'], 0)}</td><td>{pct(mg[n]['OOS']['cagr'], 1)} / {pct(mg[n]['OOS']['maxdd'], 0)}</td>"
+    f"<td class='{'pos' if mg[n]['full']['cagr'] > 0 else 'neg'}'><strong>{pct(mg[n]['full']['cagr'], 1)}</strong></td><td class='neg'>{pct(mg[n]['full']['maxdd'], 0)}</td>"
+    + "".join(f"<td class='{'pos' if mg[n]['full']['yearly'][str(y)] > 0.5 else ('neg' if mg[n]['full']['yearly'][str(y)] < -0.5 else '')}'>{pct(mg[n]['full']['yearly'][str(y)], 0)}</td>" for y in yrs_e) + "</tr>"
+    for n in mpick)
+mp_, mr_ = SM["mon_plain"], SM["mon_rec"]
+V["MON_T"] = f"{bd['Mon']['t']:+.1f}"
+V["MON_MEAN"] = f"{bd['Mon']['mean']:+.2f}%"
+V["MON_PLAIN"] = pct(mp_["summary"]["cagr"], 1)
+V["MON_PLAIN_DD"] = pct(mp_["summary"]["maxdd"], 0)
+V["MON_REC"] = pct(mr_["summary"]["cagr"], 1)
+V["MON_REC_DD"] = pct(mr_["summary"]["maxdd"], 0)
+V["MON_RECSHARE"] = f"{mr_['rec_share']*100:.0f}%"
+V["MON_WIN"] = f"{mp_['win']*100:.0f}%"
+V["MON_BOOT_LOSS"] = f"{SM['mon_boot']['No recovery']['loss_2y']*100:.0f}%"
+V["MON_BOOT_REC_DD50"] = f"{SM['mon_boot']['Recovery 4 / 2x']['dd_gt50']*100:.0f}%"
+V["SUN_T2"] = f"{bd['Sun']['t']:+.1f}"
+V["COMBO_ROWS"] = "\n".join(
+    f"<tr><th scope='row'>{html.escape(k)}</th><td>{pct(v['IS']['cagr'], 0)} / {pct(v['IS']['maxdd'], 0)}</td><td><strong>{pct(v['OOS']['cagr'], 0)}</strong> / {pct(v['OOS']['maxdd'], 0)}</td>"
+    f"<td>{pct(v['full']['cagr'], 1)}</td><td class='neg'>{pct(v['full']['maxdd'], 0)}</td><td>{v['full']['sharpe']:.2f}</td>"
+    + "".join(f"<td class='{'pos' if v['full']['yearly'][str(y)] > 0.5 else ('neg' if v['full']['yearly'][str(y)] < -0.5 else '')}'>{pct(v['full']['yearly'][str(y)], 0)}</td>" for y in yrs_e) + "</tr>"
+    for k, v in cb.items())
+V["COMBO_HEAD"] = "".join(f"<th scope='col'>{y}</th>" for y in yrs_e)
+c3 = cb["Sell Sat + buy Sun + buy Mon"]
+V["C3"] = pct(c3["full"]["cagr"], 1)
+V["C3_DD"] = pct(c3["full"]["maxdd"], 0)
+V["C3_SH"] = f"{c3['full']['sharpe']:.2f}"
+V["C2_SH"] = f"{cb['Sell Sat + buy Sun']['full']['sharpe']:.2f}"
+
 # ---- chart data ----
 data = dict(
     strip=strip,
@@ -1041,6 +1138,8 @@ data = dict(
              B=PU["windows_long"]["0.22|B"]["series"]["pnl"], dd=PU["windows_long"]["0.22|plain"]["series"]["dd"],
              szB=PU["windows_long"]["0.22|B"]["series"]["max_size"], hodl=PU["windows_long"]["0.22|plain"]["series"]["hodl"]),
     wk=dict(date=WS["dates"], simple=WS["series_simple"], rec8=WS["series_rec8"]),
+    satmon=dict(date=sr_["dates"], sp=sp_["series"], sr=sr_["series"], mp=mp_["series"], mr=mr_["series"]),
+    sathist=dict(plain=sp_["hist"], rec=sr_["hist"]),
     sdl=dict(date=SD["windows"]["0.44|plain"]["series"]["start"], price=SD["windows"]["0.44|plain"]["series"]["s0"],
              plain=SD["windows"]["0.44|plain"]["series"]["pnl"], A=SD["windows"]["0.44|A"]["series"]["pnl"],
              B=SD["windows"]["0.44|B"]["series"]["pnl"], szA=SD["windows"]["0.44|A"]["series"]["max_size"],

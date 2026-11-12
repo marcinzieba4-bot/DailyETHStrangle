@@ -90,7 +90,8 @@ def bs(S, K, sig, T, kind):
 
 def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), wings=None, wing_skew=0.10,
              hedge=False, band=0.25, stop_h=2, recovery=False, rec_k=10, rec_cap=2.0, iv_mult=1.0, spread=None,
-             start=None, end=None, cap0=100_000.0, side_by_dow=None, lev_buy=1.0, hedge_buy=None, buy_filter=None):
+             start=None, end=None, cap0=100_000.0, side_by_dow=None, lev_buy=1.0, hedge_buy=None, buy_filter=None,
+             recovery_buy=False, rec_k_buy=4, rec_cap_buy=2.0, log=False):
     sel = np.ones(len(days), bool)
     if start:
         sel &= days.index >= start
@@ -100,6 +101,7 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
     eq = cap0
     hwm = cap0
     out_eq, out_ret, traded, sizes = [], [], 0, []
+    trades = []
     worst = 0.0
     for i in range(len(d)):
         row = d.iloc[i]
@@ -123,8 +125,13 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
             sp = (row["spread"] if np.isfinite(row["spread"]) else 0.03) if spread is None else spread
             hair = 0.0 if maker else sp
             cost = c * (1 + hair) + min(OPT_FEE * S0, 0.125 * c) + p * (1 + hair) + min(OPT_FEE * S0, 0.125 * p)
-            n = lev_buy * eq / S0
+            base_b = lev_buy * eq
+            notional_b = base_b
+            if recovery_buy and eq < hwm:
+                notional_b = min(base_b + (hwm - eq) / (rec_k_buy * cost / S0), rec_cap_buy * base_b)
+            n = notional_b / S0
             pnl = n * (abs(path[-1] - S0) - cost)
+            buy_info = dict(rate=cost / S0, size_x=notional_b / base_b)
             hb = hedge if hedge_buy is None else hedge_buy
             if hb:
                 hs = path[:24]
@@ -144,7 +151,11 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
                         H = 0.0
                     pnl += H * (path[h + 1] - s_)
             traded += 1
-            sizes.append(lev_buy)
+            sizes.append(notional_b / base_b)
+            if log:
+                trades.append(dict(date=str(d.index[i].date()), dow=int(row["dow"]), side="buy", iv=float(iv), rv7=float(row["rv7"]),
+                                   prem_rate=buy_info["rate"], move=float(abs(path[-1] / S0 - 1)), size_x=buy_info["size_x"],
+                                   pnl_pct=float(pnl / eq), dd_before=float(1 - eq / hwm), eq_before=float(eq)))
         if side == 1 and eq > 0:
             T = 1 / 365
             c, _ = bs(S0, S0, iv, T, "call")
@@ -197,6 +208,10 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
                     pnl += H * (path[h + 1] - s)
             traded += 1
             sizes.append(notional / base)
+            if log:
+                trades.append(dict(date=str(d.index[i].date()), dow=int(row["dow"]), side="sell", iv=float(iv), rv7=float(row["rv7"]),
+                                   prem_rate=float(rate), move=float(abs(path[-1] / S0 - 1)), size_x=float(notional / base),
+                                   pnl_pct=float(pnl / eq), dd_before=float(1 - eq / hwm), eq_before=float(eq)))
         ret = pnl / eq if eq > 0 else 0.0
         worst = min(worst, ret)
         eq += pnl
@@ -211,9 +226,12 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
     yr = e.resample("YE").last()
     yearly = (yr / yr.shift(1).fillna(cap0) - 1) * 100
     sharpe = float(r.mean() / r.std() * np.sqrt(365)) if r.std() > 0 else 0.0
-    return dict(cagr=float(cagr * 100), maxdd=float(dd.min() * 100), sharpe=sharpe, worst_day=float(worst * 100),
-                final=float(e.iloc[-1] / cap0), traded=traded, days=len(d), max_size=float(max(sizes) if sizes else 0),
-                yearly={int(k.year): float(v) for k, v in yearly.items()}, equity=e)
+    res = dict(cagr=float(cagr * 100), maxdd=float(dd.min() * 100), sharpe=sharpe, worst_day=float(worst * 100),
+               final=float(e.iloc[-1] / cap0), traded=traded, days=len(d), max_size=float(max(sizes) if sizes else 0),
+               yearly={int(k.year): float(v) for k, v in yearly.items()}, equity=e)
+    if log:
+        res["trades"] = trades
+    return res
 
 
 def edge_table(days, paths):
