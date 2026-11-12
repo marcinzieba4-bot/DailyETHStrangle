@@ -1,0 +1,45 @@
+{
+ "ts_utc": "2026-11-12T13:52:30+00:00",
+ "eth_index": 2009.1,
+ "funding_8h": 3e-06,
+ "dvol": 56.15,
+ "daily_expiry": "13NOV26",
+ "daily_options": [
+  {
+   "instrument_name": "ETH-13NOV26-2000-P",
+   "bid_price": 0.0085,
+   "ask_price": 0.0095,
+   "mark_price": 0.009215,
+   "mark_iv": 62.72,
+   "underlying_price": 2009.33
+  },
+  {
+   "instrument_name": "ETH-13NOV26-2000-C",
+   "bid_price": 0.013,
+   "ask_price": 0.0145,
+   "mark_price": 0.013794,
+   "mark_iv": 62.72,
+   "underlying_price": 2009.29
+  },
+  {
+   "instrument_name": "ETH-13NOV26-2020-P",
+   "bid_price": 0.013,
+   "ask_price": 0.014,
+   "mark_price": 0.013693,
+   "mark_iv": 59.3,
+   "underlying_price": 2009.29
+  },
+  {
+   "instrument_name": "ETH-13NOV26-2020-C",
+   "bid_price": 0.008,
+   "ask_price": 0.0085,
+   "mark_price": 0.008318,
+   "mark_iv": 59.3,
+   "underlying_price": 2009.29
+  }
+ ],
+ "daily_atm_iv": 61.010000000000005,
+ "wsteth_ratio": 1.2490557436428014,
+ "steth_apr": 0.023305714285714284,
+ "note": "wstETH ratio from on-chain stEthPerToken() and Lido 7d SMA APR, both read 2026-11-12 13:46 UTC"
+}
