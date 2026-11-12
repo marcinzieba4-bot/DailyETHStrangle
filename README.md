@@ -89,6 +89,18 @@ sized up: rule A = half of the new premium equals the loss (min 1×); rule B = b
 * All 4-year windows since 2020: made money 29% (plain), 28% (A), 33% (B); largest tranche median 4.6× (A) / 6.2× (B), up to 28×.
 * ETH moved more than 44% over a year on 59% of start days since 2020. At 50% premium: 56% of windows profitable; at 38%: 0%.
 
+## Yearly puts only, laddered monthly, sized up to cover losses (`run_puts.py`)
+
+No ETH held; every month sell a 1-year ATM put with notional = 1/12 of capital (USD-sized). After a losing tranche:
+rule A = whole new premium equals the loss (min 1×); rule B = base + extra tranche whose premium equals the loss.
+History extended to Aug 2017 with Bitstamp daily closes (covers the 2018 crash).
+
+* 22% premium, all 4-year windows since Aug 2017: made money 97% (no size-up, median +27%), 100% with rule B
+  (median +47%, peak collateral up to 2.3× capital). Deepest fall ~51–60% (Jan 2018 start) before recovering.
+* Today's 1-year ATM put is ~18% (Sep 2027 $2,000 put bids 17.2%): median +13% over 4 years, beats 4% cash only 29%;
+  rule B median +35% but needs up to 2.8× capital as collateral.
+* Beats holding ETH in only 16–28% of windows. Last 4 years at 22%: +31% (plain) / +37% (B) vs holding +62%.
+
 ## Layout
 
 ```
@@ -102,6 +114,7 @@ run_weekly.py      weekly calls        -> results/weekly.json
 run_annual.py      yearly calls        -> results/annual.json
 run_ladder.py      monthly ladder      -> results/ladder.json
 run_straddle.py    yearly straddles    -> results/straddle.json
+run_puts.py        yearly puts only    -> results/puts.json
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
 ```
@@ -117,6 +130,7 @@ python3 run_weekly.py            # weekly covered calls, 2 ETH a week
 python3 run_annual.py            # yearly ATM calls on 50 ETH, last 4 years + all 4-year windows
 python3 run_ladder.py            # monthly ladder of yearly calls
 python3 run_straddle.py          # laddered yearly straddles with recovery sizing
+python3 run_puts.py              # laddered yearly puts with recovery sizing (2017+ windows)
 python3 report/build_report.py   # rebuild results/report.html
 ```
 

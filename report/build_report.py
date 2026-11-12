@@ -692,12 +692,63 @@ for y in ["2020", "2021", "2022", "2023", "2024", "2025"]:
         mvrows.append(f"<tr><th scope='row'>{y}</th><td>{np.median(x)*100:.0f}%</td><td>{np.mean(x > 0.44)*100:.0f}%</td></tr>")
 V["MV_ROWS"] = "\n".join(mvrows)
 
+# ---- version 8: laddered yearly puts only, USD-sized, recovery sizing ----
+PU = json.load(open(os.path.join(ROOT, "results", "puts.json")))
+PL = PU["last4"]
+PCAP = PL["start_value"]
+RL = {"plain": "No size-up", "A": "Rule A: new premium = last loss", "B": "Rule B: base + extra covering the loss"}
+prow, pwin = [], []
+for prem in ["0.22", "0.18", "0.26"]:
+    for rule in ["plain", "A", "B"]:
+        r = PL[f"{prem}|{rule}"]
+        prow.append(f"<tr><th scope='row'>{float(prem):.0%} · {RL[rule]}</th>"
+                    f"<td class='{'pos' if r['final'] > 0 else 'neg'}'><strong>{usd(r['final'], True)}</strong></td>"
+                    f"<td>{pct(r['final']/PCAP*100, 0)}</td><td>{usd(r['final']/PCAP*SELL, True)}</td>"
+                    f"<td>{r['max_size']:.1f}×</td><td>{r['max_collat']/PCAP:.1f}×</td></tr>")
+        w = PU["windows_long"][f"{prem}|{rule}"]
+        by = w["by_year"]
+        pwin.append(f"<tr><th scope='row'>{float(prem):.0%} · {RL[rule]}</th><td>{w['profit']*100:.0f}%</td><td>{w['beat_cash']*100:.0f}%</td>"
+                    f"<td>{w['beat_hodl']*100:.0f}%</td><td>{pct(w['median'], 0)}</td><td class='{'pos' if w['p10'] > 0 else 'neg'}'>{pct(w['p10'], 0)}</td>"
+                    f"<td class='{'pos' if w['worst'] > 0 else 'neg'}'>{pct(w['worst'], 0)}</td>"
+                    f"<td class='neg'>{-w['dd_median']:.0f}% / {-w['dd_worst']:.0f}%</td>"
+                    f"<td>{w['size_median']:.1f}× / {w['size_max']:.1f}×</td><td>{w['collat_median']:.1f}× / {w['collat_p90']:.1f}×</td>"
+                    f"<td>{' / '.join(pct(by.get(y, 0), 0) for y in ['2017', '2018', '2019', '2020', '2021', '2022'])}</td></tr>")
+V["PU_ROWS"] = "\n".join(prow)
+V["PU_WIN_ROWS"] = "\n".join(pwin)
+V["PU_CAP"] = usd(PCAP)
+V["PU_HODL"] = usd(PL["hodl_change"], True)
+V["PU_HODL_PCT"] = pct(PL["hodl_change"] / PCAP * 100, 0)
+V["PU_CASH4"] = usd(PCAP * (1.04 ** 4 - 1), True)
+wl = PU["windows_long"]
+V["PU_N"] = f"{wl['0.22|plain']['n']:,}"
+V["PU_FIRST"] = pd.Timestamp(wl["0.22|plain"]["first"]).strftime("%b %Y")
+V["PU_LAST"] = pd.Timestamp(wl["0.22|plain"]["last"]).strftime("%b %Y")
+V["PU22_PROFIT"] = f"{wl['0.22|plain']['profit']*100:.0f}%"
+V["PU22_MED"] = pct(wl["0.22|plain"]["median"], 0)
+V["PU22_WORST"] = pct(wl["0.22|plain"]["worst"], 0)
+V["PU22B_PROFIT"] = f"{wl['0.22|B']['profit']*100:.0f}%"
+V["PU22B_MED"] = pct(wl["0.22|B"]["median"], 0)
+V["PU22B_COL"] = f"{wl['0.22|B']['collat_p90']:.1f}×"
+V["PU18_MED"] = pct(wl["0.18|plain"]["median"], 0)
+V["PU18_CASH"] = f"{wl['0.18|plain']['beat_cash']*100:.0f}%"
+V["PU18B_MED"] = pct(wl["0.18|B"]["median"], 0)
+V["PU18B_CASH"] = f"{wl['0.18|B']['beat_cash']*100:.0f}%"
+V["PU18B_COL"] = f"{wl['0.18|B']['collat_p90']:.1f}×"
+V["PU_HOLD_BEAT"] = f"{wl['0.22|plain']['beat_hodl']*100:.0f}–{wl['0.22|B']['beat_hodl']*100:.0f}%"
+V["PU_DD_WORST"] = f"{-wl['0.22|plain']['dd_worst']:.0f}%"
+V["PU_L4_PLAIN"] = pct(PL["0.22|plain"]["final"] / PCAP * 100, 0)
+V["PU_L4_B"] = pct(PL["0.22|B"]["final"] / PCAP * 100, 0)
+
 # ---- chart data ----
 data = dict(
     strip=strip,
     ts=dict(date=ts["date"].tolist(), price=[round(x, 2) for x in ts["price"]],
             A=[round(x, 2) for x in ts["A. Call-only exit"]], B=[round(x, 2) for x in ts["B. Your plan, adds up to 2x"]],
             dA=ts["A. Call-only exit|days"].tolist(), dB=ts["B. Your plan, adds up to 2x|days"].tolist()),
+    pul=dict(date=PU["windows_long"]["0.22|plain"]["series"]["start"], price=PU["windows_long"]["0.22|plain"]["series"]["s0"],
+             plain=PU["windows_long"]["0.22|plain"]["series"]["pnl"], A=PU["windows_long"]["0.22|A"]["series"]["pnl"],
+             B=PU["windows_long"]["0.22|B"]["series"]["pnl"], dd=PU["windows_long"]["0.22|plain"]["series"]["dd"],
+             szB=PU["windows_long"]["0.22|B"]["series"]["max_size"], hodl=PU["windows_long"]["0.22|plain"]["series"]["hodl"]),
     sdl=dict(date=SD["windows"]["0.44|plain"]["series"]["start"], price=SD["windows"]["0.44|plain"]["series"]["s0"],
              plain=SD["windows"]["0.44|plain"]["series"]["pnl"], A=SD["windows"]["0.44|A"]["series"]["pnl"],
              B=SD["windows"]["0.44|B"]["series"]["pnl"], szA=SD["windows"]["0.44|A"]["series"]["max_size"],

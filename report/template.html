@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of %%ASOF%%</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest idea first: sell the ETH, then every month sell a 1-year ATM straddle (put + call) on 1/12 of 50 ETH. After a losing tranche, the next one is sized up so its premium recovers the loss. After that come covered-call ladders on 50 ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
+  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest idea first: sell the ETH, keep the dollars, and every month sell a 1-year ATM put on 1/12 of the money. After a losing tranche, the next one is sized up just enough that its premium covers the loss. After that come the straddle version and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>%%ETH%%</b></span>
     <span>Daily ATM IV <b>%%DAILY_IV%%%</b></span>
@@ -138,15 +138,56 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: short yearly straddles on ETH have lost more often than they won, and recovery sizing makes the bad years much worse</h2>
+  <h2 id="v-h">Bottom line: puts only is the best of the yearly ideas, but at today's ~18% premium it barely beats cash without leverage</h2>
   <ul>
-    <li><strong>The last 4 years would have worked: %%SD_PLAIN%% with plain monthly straddles, %%SD_A%% with rule A, %%SD_B%% with rule B</strong> (44% premium, base 50 ETH = %%SD_NOTIONAL%% at the start). But simply holding 50 ETH made %%SD_HODL%% over the same period. At the worst point, in late 2024, you needed %%SD_DD_A%% (rule A) to %%SD_DD_B%% (rule B) of cash to stay in.</li>
-    <li><strong>Across every 4-year window since 2020, plain straddles made money %%SD_W_PLAIN%% of the time.</strong> Rule A made money %%SD_W_A%% of the time and rule B %%SD_W_B%%, with a median of %%SD_W_A_MED%% for rule A against %%SD_W_PLAIN_MED%% plain. ETH moved more than 44% over a year on %%MV44%% of start days since 2020 (%%MV44_21%% since 2021), and its median 1-year move was %%MV_MED%%.</li>
-    <li><strong>The recovery rule is a martingale.</strong> In trending years it keeps adding size: the largest tranche was a median %%SD_SIZE_A%% the base size with rule A and %%SD_SIZE_B%% with rule B, and up to %%SD_SIZE_MAX%% in 2020–21. It helps when a calm year follows a loss, as in 2024–26, and turns a bad run into a wipe-out when it does not.</li>
-    <li><strong>The premium level decides everything.</strong> At 50% (implied vol 64%) plain straddles made money in %%SD_W50%% of windows. At 38% (implied vol 48%), %%SD_W38%%. Today's 1-year ATM straddle is about 43%.</li>
-    <li><strong>Covered-call ladders on ETH you keep (previous question):</strong> +$12k over the last 4 years at a 26% premium. They beat holding in 44% of 4-year windows at 26%, and 11% at 20%.</li>
+    <li><strong>At a 22% premium the put ladder made money in %%PU22_PROFIT%% of 4-year windows since %%PU_FIRST%%</strong> (median %%PU22_MED%%, worst %%PU22_WORST%%), including the 2018 crash. Every ETH crash since 2017 recovered within four years, and the puts sold during the recovery paid for the losses. Rule B (base + an extra tranche whose premium covers the loss) made money in %%PU22B_PROFIT%% (median %%PU22B_MED%%).</li>
+    <li><strong>The real premium today is about 18%</strong> (Sep 2027 $2,000 put: 17.2% for 0.86 years). At 18% with no size-up, the median 4-year result was %%PU18_MED%%, and it beat 4% cash (+17%) in only %%PU18_CASH%% of windows. Rule B lifts that to %%PU18B_MED%% (beats cash %%PU18B_CASH%%), but at its peak it needs collateral of up to %%PU18B_COL%% your capital, which means leverage.</li>
+    <li><strong>The size-up rule worked in this history because ETH always came back.</strong> A crash that keeps going for years would hit it hardest, because by then it holds 3–4× the normal size. Before recovering, the account fell as much as %%PU_DD_WORST%% (starting Jan 2018).</li>
+    <li><strong>Puts give up ETH's upside.</strong> They beat simply holding ETH in only %%PU_HOLD_BEAT%% of windows. Over the last 4 years: %%PU_L4_PLAIN%% on capital with no size-up and %%PU_L4_B%% with rule B, against %%PU_HODL_PCT%% for holding 50 ETH.</li>
+    <li><strong>Straddles (previous question) were worse:</strong> they made money in about 30% of windows at a 44% premium, because ETH's big up-years hit the calls.</li>
 
     </ul>
+</section>
+
+<section aria-labelledby="pu-h">
+  <h2 id="pu-h">Yearly puts only, laddered monthly, sized up to cover losses</h2>
+  <p>Sell the ETH and keep the dollars as capital. Every month, sell a 1-year ATM put with a notional of 1/12 of the capital. When a put expires, pay the strike minus the price if it is in the money, then sell a new 1-year put at the current price. After a losing tranche (payout larger than premium), the replacement is sized up only enough to cover that loss:</p>
+  <ul class="steps" style="list-style:disc">
+    <li><strong>Rule A:</strong> the new tranche's whole premium equals the loss, never smaller than the base. Example: ETH −60%, premium 22%, loss 38% → 38/22 = 1.7× the base.</li>
+    <li><strong>Rule B:</strong> the base tranche plus an extra one whose premium equals the loss. Same example → 1 + 1.7 = 2.7×.</li>
+  </ul>
+  <p>Tranches are sized in dollars, so a rally does not inflate them. Sized in ETH, windows that start cheap, such as 2018–2020, end up selling puts worth many times the starting money; that version lost heavily for those start years. Today's 1-year ATM put is about 18% of spot. The longest Deribit put, Sep 2027 at $2,000, bids 17.2% for 0.86 years; it is cheaper than the call because ETH futures trade about 4% above spot. Results are shown for 22% (half of the 44% straddle), 18% (today) and 26%.</p>
+  <h3>The last 4 years (Nov 2022 → Nov 2026), capital %%PU_CAP%% (50 ETH × $1,264)</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Premium · sizing</th><th scope="col">Profit</th><th scope="col">% of capital</th><th scope="col">Scaled to your %%SELL%%</th><th scope="col">Largest tranche</th><th scope="col">Peak collateral, × capital</th></tr></thead>
+      <tbody>
+%%PU_ROWS%%
+        <tr><th scope="row">Holding 50 ETH instead</th><td>%%PU_HODL%%</td><td>%%PU_HODL_PCT%%</td><td></td><td></td><td></td></tr>
+        <tr><th scope="row">Cash at 4% a year</th><td>%%PU_CASH4%%</td><td>+17%</td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Over these 4 years the account never fell below its starting value. Premiums collected in 2023–24 covered the 2025–26 put losses.</p>
+  <h3>Every 4-year window since %%PU_FIRST%% (%%PU_N%% start dates, including the 2018 crash)</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Premium · sizing</th><th scope="col">Made money</th><th scope="col">Beat 4% cash</th><th scope="col">Beat holding ETH</th><th scope="col">Median</th><th scope="col">Worst 10%</th><th scope="col">Worst</th><th scope="col">Deepest fall, median / worst</th><th scope="col">Largest tranche, median / max</th><th scope="col">Peak collateral, median / 90th</th><th scope="col">Median by start year 2017 / 18 / 19 / 20 / 21 / 22</th></tr></thead>
+      <tbody>
+%%PU_WIN_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="legend" aria-hidden="true">
+      <span><i class="key-line" style="background:var(--ink-2)"></i>ETH price at start</span>
+      <span><i class="key-line" style="background:var(--s1)"></i>No size-up</span>
+      <span><i class="key-line" style="background:var(--s2)"></i>Rule A</span>
+      <span><i class="key-line" style="background:var(--s3)"></i>Rule B</span>
+    </div>
+    <div class="chart" id="puts" role="img" aria-label="ETH price at start and the 4-year result of the put ladder, by start date, for three sizing rules."></div>
+  </div>
+  <p class="note">22% premium, % of starting capital after 4 years; open puts are bought back at the end. Prices before Feb 2020 are Bitstamp daily closes, Deribit 08:00 settlements after. "Deepest fall" is the lowest point of capital plus collected premiums minus what the open puts would cost to buy back.</p>
 </section>
 
 <section aria-labelledby="sd-h">
@@ -877,7 +918,23 @@ function drawSdTS() {
     tipRow(tip, "Rule B (max " + S.szB[i].toFixed(1) + "×)", fp(S.B[i], 0), "var(--s3)");
   });
 }
-function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); drawSdTS(); }
+function drawPuTS() {
+  const S = D.pul;
+  const pn = { dom: [-60, 100], ticks: [-50, 0, 50, 100], fmt: pctFmt, h: 120 };
+  drawTS("puts", S, [
+    pricePanel(),
+    Object.assign({ key: "plain", title: "No size-up: 4-year result, % of capital", color: "var(--s1)" }, pn),
+    Object.assign({ key: "A", title: "Rule A: 4-year result", color: "var(--s2)" }, pn),
+    Object.assign({ key: "B", title: "Rule B: 4-year result", color: "var(--s3)" }, pn),
+  ], (tip, i) => {
+    tipRow(tip, "No size-up", fp(S.plain[i], 0), "var(--s1)");
+    tipRow(tip, "Rule A", fp(S.A[i], 0), "var(--s2)");
+    tipRow(tip, "Rule B (max " + S.szB[i].toFixed(1) + "×)", fp(S.B[i], 0), "var(--s3)");
+    tipRow(tip, "Deepest fall, no size-up", fp(S.dd[i], 0));
+    tipRow(tip, "Holding ETH", fp(S.hodl[i], 0));
+  });
+}
+function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); drawSdTS(); drawPuTS(); }
 drawAll();
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 120); });
 </script>
