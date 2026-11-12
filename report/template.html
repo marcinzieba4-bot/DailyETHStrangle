@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of %%ASOF%%</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest idea first: sell the ETH, keep the dollars, and every month sell a 1-year ATM put on 1/12 of the money. After a losing tranche, the next one is sized up just enough that its premium covers the loss. After that come the straddle version and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
+  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest question first: the monthly ladder of 1-year ATM puts run continuously from January 2020 with compounding. It shows yearly returns, maximum drawdown and what happens with leverage. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>%%ETH%%</b></span>
     <span>Daily ATM IV <b>%%DAILY_IV%%%</b></span>
@@ -138,15 +138,55 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: puts only is the best of the yearly ideas, but at today's ~18% premium it barely beats cash without leverage</h2>
+  <h2 id="v-h">Bottom line: lever the collateral, not the notional</h2>
   <ul>
-    <li><strong>At a 22% premium the put ladder made money in %%PU22_PROFIT%% of 4-year windows since %%PU_FIRST%%</strong> (median %%PU22_MED%%, worst %%PU22_WORST%%), including the 2018 crash. Every ETH crash since 2017 recovered within four years, and the puts sold during the recovery paid for the losses. Rule B (base + an extra tranche whose premium covers the loss) made money in %%PU22B_PROFIT%% (median %%PU22B_MED%%).</li>
-    <li><strong>The real premium today is about 18%</strong> (Sep 2027 $2,000 put: 17.2% for 0.86 years). At 18% with no size-up, the median 4-year result was %%PU18_MED%%, and it beat 4% cash (+17%) in only %%PU18_CASH%% of windows. Rule B lifts that to %%PU18B_MED%% (beats cash %%PU18B_CASH%%), but at its peak it needs collateral of up to %%PU18B_COL%% your capital, which means leverage.</li>
-    <li><strong>The size-up rule worked in this history because ETH always came back.</strong> A crash that keeps going for years would hit it hardest, because by then it holds 3–4× the normal size. Before recovering, the account fell as much as %%PU_DD_WORST%% (starting Jan 2018).</li>
-    <li><strong>Puts give up ETH's upside.</strong> They beat simply holding ETH in only %%PU_HOLD_BEAT%% of windows. Over the last 4 years: %%PU_L4_PLAIN%% on capital with no size-up and %%PU_L4_B%% with rule B, against %%PU_HODL_PCT%% for holding 50 ETH.</li>
-    <li><strong>Straddles (previous question) were worse:</strong> they made money in about 30% of windows at a 44% premium, because ETH's big up-years hit the calls.</li>
+    <li><strong>From Jan 2020, the plain cash-secured put ladder made %%L1_CAGR%% a year with a worst drop of %%L1_DD%%.</strong> Premiums follow the market: they were richest in 2021 and leanest in 2023, and are %%LV_PREM_NOW%% today.</li>
+    <li><strong>The best version is 1× notional, plus your size-up after losses, plus about 4% earned on the collateral: %%LB_CAGR%% a year, worst drop %%LB_DD%%</strong>, recovered by %%LB_REC%%. That turned $100k into %%LB_FINAL%%; on your %%SELL%% it would be about %%LB_USD%%. It held up from every start date tested, including the Nov 2021 top (%%LS_TOP%% a year while holding ETH lost %%LS_TOP_HODL%% a year).</li>
+    <li><strong>More notional mostly buys more drawdown.</strong> 2× made %%L2_CAGR%% a year with a %%L2_DD%% drop. 3× was liquidated in %%L3_LIQ%%. With the size-up and yield, 1.5× made %%L15_CAGR%% (%%L15_DD%% drop) and 2× made %%L2S_CAGR%% (%%L2S_DD%% drop).</li>
+    <li><strong>Put spreads and a 200-day trend filter made it worse.</strong> The protective put costs more than it saves, because ETH's crashes go past it. The filter stops selling right after crashes, which is when puts pay the most.</li>
+    <li><strong>Holding ETH from Jan 2020 made %%HD_CAGR%% a year</strong> (worst drop %%HD_DD%%), because 2020 was close to the bottom. From 2021 onward the put ladder with yield and size-ups was competitive with holding, and far steadier.</li>
 
     </ul>
+</section>
+
+<section aria-labelledby="lv-h">
+  <h2 id="lv-h">The put ladder from 2020: yearly returns, drawdown and leverage</h2>
+  <p>One continuous account from 1 Jan 2020 to today, compounding. Every month (30.4 days) a 1-year ATM put is sold with a notional of leverage × current equity ÷ 12. When a put has earned 95% of its premium, it is bought back to free margin. Premiums follow the market: 1-year IV is half of Deribit's 30-day DVOL plus 26 points, so DVOL 56 gives 54, today's quote. Before DVOL starts in Mar 2021, realised volatility stands in for it. ETH futures are assumed to trade 5% a year above spot, and puts are sold 1.5% below their value. The model's 1-year ATM put premium by year: %%LV_PREM%%.</p>
+  <p>Margin follows Deribit's standard rules for short options with USD collateral. To open a new put you need 15% of the ETH price plus the option's value. To keep it open you need 7.5% plus the option's value. If the account drops below that, everything is bought back and the run stops. "Leverage" is the total put notional divided by the account value when each put is sold. The size-up is your rule B (an extra tranche whose premium equals the last loss), capped at 3× the normal tranche. "4% yield" means cash collateral earns 4% a year.</p>
+  <h3>Yearly returns</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Version</th>%%LV_HEAD%%<th scope="col">Per year</th><th scope="col">Worst drop</th><th scope="col">Back to the peak by</th><th scope="col">$1 became</th><th scope="col">Highest notional / equity</th></tr></thead>
+      <tbody>
+%%LV_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p class="note">The worst drop is measured daily from the highest account value, including what the open puts would cost to buy back. 2026 runs to 12 Nov. Holding ETH from Jan 2020 starts near the bottom, which flatters it.</p>
+  <div class="card">
+    <div class="legend" aria-hidden="true">
+      <span><i class="key-line" style="background:var(--ink-2)"></i>ETH price</span>
+      <span><i class="key-line" style="background:var(--s1)"></i>Account value, $100 at start</span>
+    </div>
+    <div class="chart" id="levts" role="img" aria-label="ETH price and account value from 2020 for four versions of the put ladder."></div>
+  </div>
+  <h3>Does it depend on when you start?</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Start date</th>%%LS_HEAD%%</tr></thead>
+      <tbody>
+%%LS_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>The version with the size-up and 4% yield kept its worst drop between −36% and −42% from every start, and made money from every start. Without them the plain ladder made about %%LS_21_PLAIN%% a year from 2021, below cash.</p>
+  <h3>How to lever it</h3>
+  <ol class="steps">
+    <li><strong>Make the collateral earn first.</strong> Cash-secured puts leave the whole notional idle. Earning about 4% on it added roughly 4–5 points a year without adding any ETH risk. In practice that means either collateral that earns yield on your venue, or keeping only the margin (about 35% of notional at 1×) on the exchange and the rest in a stablecoin lending pool, topped up when ETH falls. The second route needs a strict top-up plan, because a late top-up means liquidation.</li>
+    <li><strong>Keep your size-up rule, capped at 3×.</strong> It adds exposure right after a crash, when premiums are richest. That added about 3 points a year and shortened the recovery from the 2022 drawdown by almost a year.</li>
+    <li><strong>Raise notional only as far as you can stomach the drop.</strong> 1× had about a −42% worst drop, 1.5× about −60%, 2× about −78%. Above about 2.5× a 2022-style crash liquidates the account. Deribit's opening margin already caps naked ATM puts near 2.9×.</li>
+    <li><strong>Skip put spreads and trend filters</strong> for this strategy. In this history both lowered returns more than they lowered drawdowns.</li>
+  </ol>
 </section>
 
 <section aria-labelledby="pu-h">
@@ -934,7 +974,25 @@ function drawPuTS() {
     tipRow(tip, "Holding ETH", fp(S.hodl[i], 0));
   });
 }
-function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); drawSdTS(); drawPuTS(); }
+function drawLevTS() {
+  const S = D.lev;
+  const pn = { dom: [0, 500], ticks: [0, 100, 200, 300, 400, 500], fmt: v => "$" + v, h: 110 };
+  drawTS("levts", S, [
+    pricePanel(),
+    Object.assign({ key: "p1", title: "Puts 1×, cash-secured", color: "var(--s1)" }, pn),
+    Object.assign({ key: "best", title: "Puts 1× + size-up + 4% yield", color: "var(--s1)" }, pn),
+    Object.assign({ key: "l15", title: "Puts 1.5× + size-up + 4% yield", color: "var(--s1)" }, pn),
+    Object.assign({ key: "l2", title: "Puts 2× + size-up + 4% yield", color: "var(--s1)" }, pn),
+  ], (tip, i) => {
+    const f = v => "$" + v.toFixed(0);
+    tipRow(tip, "1× cash-secured", f(S.p1[i]));
+    tipRow(tip, "1× + size-up + yield", f(S.best[i]));
+    tipRow(tip, "1.5× + size-up + yield", f(S.l15[i]));
+    tipRow(tip, "2× + size-up + yield", f(S.l2[i]));
+    tipRow(tip, "Cash at 4%", f(S.cash[i]));
+  });
+}
+function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); drawSdTS(); drawPuTS(); drawLevTS(); }
 drawAll();
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 120); });
 </script>

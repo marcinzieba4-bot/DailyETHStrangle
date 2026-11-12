@@ -101,6 +101,23 @@ History extended to Aug 2017 with Bitstamp daily closes (covers the 2018 crash).
   rule B median +35% but needs up to 2.8× capital as collateral.
 * Beats holding ETH in only 16–28% of windows. Last 4 years at 22%: +31% (plain) / +37% (B) vs holding +62%.
 
+## Put ladder from 2020 with leverage (`run_leverage.py`)
+
+Continuous, compounding account from 1 Jan 2020; monthly 1-year ATM puts on leverage × equity / 12; market-priced premiums
+(1y IV = 0.5 × DVOL + 26, realised-vol proxy before Mar 2021, 5%/yr futures basis); Deribit-style margin with liquidation;
+puts bought back at 95% profit.
+
+| Version | CAGR | Max drawdown |
+|---|---|---|
+| Puts 1× cash-secured | +6.5% | −43% |
+| 1× + size-up (rule B, cap 3×) + 4% on collateral | **+14.6%** | −42% |
+| 1.5× + size-up + yield | +18.7% | −60% |
+| 2× + size-up + yield | +21.7% | −78% |
+| Puts 3× | liquidated Jun 2022 | −97% |
+| Put spreads / 200-day MA filter | 3% or less | −40% to −59% |
+
+`leverage_starts.json`: same variants from 2021, Nov 2021 top, Jun 2022 bottom, Mar 2024.
+
 ## Layout
 
 ```
@@ -115,6 +132,7 @@ run_annual.py      yearly calls        -> results/annual.json
 run_ladder.py      monthly ladder      -> results/ladder.json
 run_straddle.py    yearly straddles    -> results/straddle.json
 run_puts.py        yearly puts only    -> results/puts.json
+run_leverage.py    puts from 2020, lev -> results/leverage.json
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
 ```
@@ -131,6 +149,7 @@ python3 run_annual.py            # yearly ATM calls on 50 ETH, last 4 years + al
 python3 run_ladder.py            # monthly ladder of yearly calls
 python3 run_straddle.py          # laddered yearly straddles with recovery sizing
 python3 run_puts.py              # laddered yearly puts with recovery sizing (2017+ windows)
+python3 run_leverage.py          # continuous put ladder from 2020 with leverage, yearly returns, drawdown
 python3 report/build_report.py   # rebuild results/report.html
 ```
 

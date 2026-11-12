@@ -739,12 +739,81 @@ V["PU_DD_WORST"] = f"{-wl['0.22|plain']['dd_worst']:.0f}%"
 V["PU_L4_PLAIN"] = pct(PL["0.22|plain"]["final"] / PCAP * 100, 0)
 V["PU_L4_B"] = pct(PL["0.22|B"]["final"] / PCAP * 100, 0)
 
+# ---- version 9: continuous run from 2020 with leverage ----
+LV = json.load(open(os.path.join(ROOT, "results", "leverage.json")))
+LS = json.load(open(os.path.join(ROOT, "results", "leverage_starts.json")))
+years = sorted({int(y) for v in LV["variants"].values() for y in v["yearly"]})
+order = ["Puts 1× (cash-secured)", "Puts 1× + size-up (cap 3×)", "Puts 1× + 4% yield on collateral", "Puts 1× + size-up + 4% yield",
+         "Puts 1.5× + size-up + 4% yield", "Puts 2× + size-up + 4% yield", "Puts 1.5×", "Puts 2×", "Puts 3×",
+         "Puts 1×, only above 200-day MA", "Puts 2×, only above 200-day MA", "Put spread (−50% wing) 2×", "Put spread (−30% wing) 2×",
+         "Put spread (−30% wing) 3×", "Hold ETH", "Cash at 4%"]
+lv_rows = []
+for k in order:
+    v = LV["variants"][k]
+    rec = v.get("dd_recovered")
+    liq = v.get("liquidated")
+    def ycell(y):
+        val = v["yearly"].get(str(y), v["yearly"].get(y, 0))
+        if liq and y > pd.Timestamp(liq).year:
+            return "<td>—</td>"
+        return f"<td class='{'pos' if val > 0.5 else ('neg' if val < -0.5 else '')}'>{pct(val, 0)}</td>"
+    cells = "".join(ycell(y) for y in years)
+    if v["maxdd"] > -0.01:
+        rec = None
+    strong = k in ("Puts 1× + size-up + 4% yield",)
+    name = f"<strong>{html.escape(k)}</strong>" if strong else html.escape(k)
+    lv_rows.append(f"<tr><th scope='row'>{name}</th>{cells}<td><strong>{pct(v['cagr'], 1)}</strong></td>"
+                   f"<td class='{'neg' if v['maxdd'] < -0.01 else ''}'>{pct(v['maxdd'], 0)}</td><td>{'liquidated ' + pd.Timestamp(liq).strftime('%b %Y') if liq else (pd.Timestamp(rec).strftime('%b %Y') if rec else ('—' if v['maxdd'] > -0.01 else 'not yet'))}</td>"
+                   f"<td>×{v['final']/LV['cap0']:.2f}</td><td>{(str(round(v['peak_notional_x'], 1)) + '×') if 'peak_notional_x' in v else ''}</td></tr>")
+V["LV_HEAD"] = "".join(f"<th scope='col'>{y}{' YTD' if y == years[-1] else ''}</th>" for y in years)
+V["LV_ROWS"] = "\n".join(lv_rows)
+V["LV_PREM"] = " · ".join(f"{y}: {v:.0f}%" for y, v in LV["premium_by_year"].items())
+V["LV_PREM_NOW"] = f"{LV['premium_now']:.1f}%"
+sv = ["Puts 1×", "1× + size-up + 4% yield", "1.5× + size-up + 4% yield", "2× + size-up + 4% yield", "Hold ETH"]
+V["LS_HEAD"] = "".join(f"<th scope='col'>{html.escape(k)}</th>" for k in sv)
+ls_rows = []
+labels = {"2021-01-01": "1 Jan 2021", "2021-11-09": "9 Nov 2021 (ETH top)", "2022-06-18": "18 Jun 2022 (ETH bottom)", "2024-03-12": "12 Mar 2024"}
+for st_, row in LS.items():
+    ls_rows.append(f"<tr><th scope='row'>{labels.get(st_, st_)}</th>" + "".join(
+        f"<td><span class='{'pos' if row[k]['cagr'] > 0 else 'neg'}'>{pct(row[k]['cagr'], 1)}/yr</span><span class='sm'>worst drop {pct(row[k]['maxdd'], 0)}</span></td>" for k in sv) + "</tr>")
+V["LS_ROWS"] = "\n".join(ls_rows)
+lb = LV["variants"]["Puts 1× + size-up + 4% yield"]
+V["LB_CAGR"] = pct(lb["cagr"], 1)
+V["LB_DD"] = pct(lb["maxdd"], 0)
+V["LB_REC"] = pd.Timestamp(lb["dd_recovered"]).strftime("%b %Y")
+V["LB_FINAL"] = f"×{lb['final']/LV['cap0']:.2f}"
+V["LB_USD"] = usd(SELL * lb["final"] / LV["cap0"])
+l1 = LV["variants"]["Puts 1× (cash-secured)"]
+V["L1_CAGR"] = pct(l1["cagr"], 1)
+V["L1_DD"] = pct(l1["maxdd"], 0)
+l2 = LV["variants"]["Puts 2×"]
+V["L2_CAGR"] = pct(l2["cagr"], 1)
+V["L2_DD"] = pct(l2["maxdd"], 0)
+l3 = LV["variants"]["Puts 3×"]
+V["L3_LIQ"] = pd.Timestamp(l3["liquidated"]).strftime("%B %Y")
+l15 = LV["variants"]["Puts 1.5× + size-up + 4% yield"]
+V["L15_CAGR"] = pct(l15["cagr"], 1)
+V["L15_DD"] = pct(l15["maxdd"], 0)
+l2s = LV["variants"]["Puts 2× + size-up + 4% yield"]
+V["L2S_CAGR"] = pct(l2s["cagr"], 1)
+V["L2S_DD"] = pct(l2s["maxdd"], 0)
+hd = LV["variants"]["Hold ETH"]
+V["HD_CAGR"] = pct(hd["cagr"], 1)
+V["HD_DD"] = pct(hd["maxdd"], 0)
+V["LS_TOP"] = pct(LS["2021-11-09"]["1× + size-up + 4% yield"]["cagr"], 1)
+V["LS_TOP_HODL"] = pct(LS["2021-11-09"]["Hold ETH"]["cagr"], 1)
+V["LS_21_PLAIN"] = pct(LS["2021-01-01"]["Puts 1×"]["cagr"], 1)
+
 # ---- chart data ----
 data = dict(
     strip=strip,
     ts=dict(date=ts["date"].tolist(), price=[round(x, 2) for x in ts["price"]],
             A=[round(x, 2) for x in ts["A. Call-only exit"]], B=[round(x, 2) for x in ts["B. Your plan, adds up to 2x"]],
             dA=ts["A. Call-only exit|days"].tolist(), dB=ts["B. Your plan, adds up to 2x|days"].tolist()),
+    lev=dict(date=LV["series_dates"], price=LV["series_price"],
+             p1=LV["series"]["Puts 1× (cash-secured)"], best=LV["series"]["Puts 1× + size-up + 4% yield"],
+             l15=LV["series"]["Puts 1.5× + size-up + 4% yield"], l2=LV["series"]["Puts 2× + size-up + 4% yield"],
+             cash=LV["series"]["Cash at 4%"]),
     pul=dict(date=PU["windows_long"]["0.22|plain"]["series"]["start"], price=PU["windows_long"]["0.22|plain"]["series"]["s0"],
              plain=PU["windows_long"]["0.22|plain"]["series"]["pnl"], A=PU["windows_long"]["0.22|A"]["series"]["pnl"],
              B=PU["windows_long"]["0.22|B"]["series"]["pnl"], dd=PU["windows_long"]["0.22|plain"]["series"]["dd"],
