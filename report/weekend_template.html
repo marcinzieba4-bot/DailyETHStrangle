@@ -1,0 +1,916 @@
+<title>ETH Weekend Straddles</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+/* One reading column like a desk strategy note; charts, tickets and tables can run a little wider. */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --ink: #101720;
+  --ink-2: #485364;
+  --muted: #6f7988;
+  --rule: #e0e4ea;
+  --axis: #c3c8d0;
+  --accent: #2a78d6;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --pos: #0b6b2c;
+  --neg: #b42828;
+  --pos-rgb: 42, 120, 214;
+  --neg-rgb: 227, 73, 72;
+  --sat-rgb: 42, 120, 214;
+  --sun-rgb: 235, 104, 52;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117; --surface: #151a22; --surface-2: #1b212b; --ink: #edf0f4; --ink-2: #b6bfcb; --muted: #8790a0;
+    --rule: #252c37; --axis: #3a4250; --accent: #4b93ea; --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+    --pos: #3cc46a; --neg: #f07a7a; --pos-rgb: 57, 135, 229; --neg-rgb: 230, 103, 103; --sat-rgb: 57, 135, 229; --sun-rgb: 217, 89, 38;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1117; --surface: #151a22; --surface-2: #1b212b; --ink: #edf0f4; --ink-2: #b6bfcb; --muted: #8790a0;
+  --rule: #252c37; --axis: #3a4250; --accent: #4b93ea; --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --pos: #3cc46a; --neg: #f07a7a; --pos-rgb: 57, 135, 229; --neg-rgb: 230, 103, 103; --sat-rgb: 57, 135, 229; --sun-rgb: 217, 89, 38;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+main { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 60px; }
+section { display: flex; flex-direction: column; gap: 16px; min-width: 0; scroll-margin-top: 16px; }
+h1, h2, h3 { font-family: var(--font-head); font-weight: 600; text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 46px); letter-spacing: -0.01em; }
+h2 { font-size: clamp(22px, 3.2vw, 28px); }
+h3 { font-size: 18px; }
+p { margin: 0; max-width: 70ch; color: var(--ink-2); }
+p strong, li strong, td strong { color: var(--ink); font-weight: 600; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 18px; color: var(--ink-2); }
+.mono, td, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.pos { color: var(--pos); }
+.neg { color: var(--neg); }
+.muted { color: var(--muted); }
+header { display: flex; flex-direction: column; gap: 14px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 24px; font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
+.facts b { color: var(--ink); font-weight: 500; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 8px; font-size: 13px; }
+nav.toc a { color: var(--ink-2); text-decoration: none; border: 1px solid var(--rule); background: var(--surface); padding: 4px 10px; border-radius: 999px; }
+nav.toc a:hover { color: var(--ink); border-color: var(--axis); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tile .k { font-size: 12px; color: var(--muted); }
+.tile .v { font-family: var(--font-mono); font-size: 24px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 12px; color: var(--muted); }
+
+.verdict { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.verdict h2 { font-size: clamp(22px, 3vw, 26px); }
+ul.tight, ol.tight { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; color: var(--ink-2); max-width: 74ch; }
+ol.tight li::marker { font-family: var(--font-mono); color: var(--muted); }
+
+/* weekend timeline */
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; position: relative; }
+.timeline li { position: relative; padding: 34px 12px 0 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.timeline li::before { content: ""; position: absolute; left: 0; right: 0; top: 11px; height: 3px; background: var(--seg, var(--rule)); }
+.timeline li::after { content: ""; position: absolute; left: 0; top: 4px; width: 17px; height: 17px; border-radius: 50%; background: var(--surface); border: 3px solid var(--dot, var(--ink-2)); }
+.timeline li.sat { --seg: rgba(var(--sat-rgb), 0.55); }
+.timeline li.sun { --seg: rgba(var(--sun-rgb), 0.55); }
+.timeline li.end::before { display: none; }
+.timeline .t { font-family: var(--font-mono); font-size: 13px; color: var(--ink); font-weight: 500; }
+.timeline .lt { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.timeline .d { font-size: 14px; color: var(--ink-2); line-height: 1.45; }
+.timeline .d b { color: var(--ink); font-weight: 600; }
+@media (max-width: 720px) {
+  .timeline { grid-template-columns: 1fr; }
+  .timeline li { padding: 0 0 22px 34px; }
+  .timeline li::before { left: 7px; right: auto; top: 18px; bottom: 0; width: 3px; height: auto; }
+  .timeline li::after { top: 0; }
+}
+
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+.rules.stack { grid-template-columns: 1fr; }
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px 32px; align-items: start; }
+.formula div { padding-left: 1.4em; text-indent: -1.4em; }
+.rule { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rule h3 { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.rule .n { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-weight: 400; }
+.rule p { font-size: 15px; }
+.rule .why { font-size: 13px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 10px; }
+.formula { font-family: var(--font-mono); font-size: 13.5px; background: var(--surface-2); border-radius: 6px; padding: 10px 12px; color: var(--ink); line-height: 1.6; overflow-x: auto; }
+
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: right; padding: 9px 11px; border-bottom: 1px solid var(--rule); vertical-align: top; white-space: nowrap; }
+th[scope="row"], thead th:first-child { text-align: left; font-family: var(--font-body); font-weight: 500; color: var(--ink); }
+thead th { font-family: var(--font-body); font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: 0.02em; vertical-align: bottom; white-space: normal; }
+tbody tr:last-child th, tbody tr:last-child td { border-bottom: none; }
+td.hm { background: rgba(var(--pos-rgb), calc(var(--a) * 0.24)); color: var(--ink); }
+td.hm[data-tone="n"] { background: rgba(var(--neg-rgb), calc(var(--a) * 0.24)); }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 8px 6px; min-width: 0; }
+.card.pad { padding: 16px; }
+.bar-cell { display: inline-block; height: 8px; border-radius: 2px; vertical-align: middle; margin-left: 8px; }
+
+/* trade inspector */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: inherit; font-size: 13px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--rule); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.chip:hover { border-color: var(--axis); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.pick { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 13px; color: var(--muted); }
+select { font: inherit; font-family: var(--font-mono); font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--axis); border-radius: 6px; padding: 6px 8px; max-width: 100%; }
+button.step { font: inherit; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--axis); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.insp { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+.insp-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; align-items: baseline; }
+.insp-head h3 { font-size: 22px; }
+.badge { font-family: var(--font-mono); font-size: 15px; font-weight: 500; padding: 3px 10px; border-radius: 6px; background: var(--surface-2); }
+.story { font-size: 15px; color: var(--ink-2); max-width: 80ch; }
+.tickets { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; }
+.ticket { border: 1px solid var(--rule); border-radius: 10px; padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 8px; min-width: 0; border-top: 3px solid var(--tc, var(--axis)); }
+.ticket.sat { --tc: var(--s1); }
+.ticket.hedge { --tc: var(--s3); }
+.ticket.sun { --tc: var(--s2); }
+.ticket h4 { margin: 0; font-family: var(--font-head); font-size: 16px; font-weight: 600; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ticket h4 span { font-family: var(--font-mono); font-size: 12px; font-weight: 400; color: var(--muted); }
+.ticket table, .rule table { font-size: 13px; }
+.ticket td, .rule td { padding: 5px 0 5px 10px; border-bottom: 1px solid var(--rule); white-space: normal; }
+.ticket td:last-child, .rule td:last-child { white-space: nowrap; }
+.ticket td:first-child, .rule td:first-child { text-align: left; font-family: var(--font-body); color: var(--ink-2); padding-left: 0; }
+.ticket tr.tot td, .rule tr.tot td { color: var(--ink); font-weight: 600; border-bottom: none; }
+.ticket .hint, .rule .hint { display: block; font-size: 11.5px; color: var(--muted); line-height: 1.35; margin-top: 1px; }
+
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--font-mono); font-size: 11px; fill: var(--muted); }
+.chart .lbl { font-family: var(--font-body); font-size: 13px; fill: var(--ink); }
+.chart .lbl2 { font-family: var(--font-body); font-size: 11.5px; fill: var(--ink-2); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: var(--ink-2); padding: 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key-line { width: 14px; height: 2px; border-radius: 1px; display: inline-block; }
+.key-dash { width: 14px; height: 0; border-top: 2px dashed var(--muted); display: inline-block; }
+.key-bar { width: 12px; height: 10px; border-radius: 2px; display: inline-block; }
+.key-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--axis); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--ink-2); box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 170px; z-index: 5; }
+.tip .tv { font-family: var(--font-mono); color: var(--ink); font-weight: 500; }
+.tip .row { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.tip .row span:first-child { display: inline-flex; gap: 6px; align-items: center; }
+.tip .hd { color: var(--ink); font-weight: 500; margin-bottom: 4px; }
+
+details.yr { border-top: 1px solid var(--rule); padding: 10px 0; }
+details.yr:last-of-type { border-bottom: 1px solid var(--rule); }
+summary { cursor: pointer; color: var(--ink); font-weight: 500; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; }
+summary .sm { font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-weight: 400; }
+summary:focus-visible, button:focus-visible, select:focus-visible, .chip:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+table.log { font-size: 12.5px; margin-top: 10px; }
+table.log th, table.log td { padding: 6px 8px; }
+table.log td button { font: inherit; color: var(--accent); background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+table.log tr.rec td:nth-child(4) { color: var(--ink); font-weight: 600; }
+.note { font-size: 13px; color: var(--muted); max-width: 82ch; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start; }
+.two > div { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.check { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0; }
+.check li { display: grid; grid-template-columns: 112px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--rule); color: var(--ink-2); font-size: 15px; }
+.check li:last-child { border-bottom: none; }
+.check .when { font-family: var(--font-mono); font-size: 13px; color: var(--ink); }
+.check .when small { display: block; color: var(--muted); font-size: 11px; }
+footer { font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 8px; }
+footer code, p code, li code, td code { font-family: var(--font-mono); font-size: 0.92em; background: var(--surface); border: 1px solid var(--rule); padding: 1px 5px; border-radius: 4px; color: var(--ink); }
+@media (max-width: 560px) {
+  body { font-size: 15px; padding-block: 20px 48px; }
+  .verdict, .insp { padding: 16px; }
+  th, td { padding: 7px 7px; }
+  .tile .v { font-size: 20px; }
+  .check li { grid-template-columns: 1fr; gap: 4px; }
+}
+</style>
+
+<main>
+<header>
+  <div class="eyebrow">Strategy report · chosen version only · <span data-v="period"></span></div>
+  <h1>Sell the Saturday straddle, buy the Sunday one</h1>
+  <p class="lede">Every weekend, sell a one-day ETH at-the-money straddle on Saturday morning and buy one on Sunday morning. The Saturday sale is sized up a little after losses and gets a one-time perp hedge if ETH moves 3%. This page shows every rule, how each position is sized, what happened on all <span data-v="weekends"></span> weekends since March 2021, and charts of the results.</p>
+  <div class="facts">
+    <span>Start <b data-v="cap"></b> (50 wstETH)</span>
+    <span>End <b data-v="final"></b></span>
+    <span>Deribit daily options, real traded IVs</span>
+    <span>Hourly ETH-PERP prices</span>
+    <span>Costs: 1.5% of option price + 0.03% fee per leg</span>
+  </div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#s-res">Results</a><a href="#s-rules">Rules</a><a href="#s-why">Why it works</a><a href="#s-size">Sizing</a><a href="#s-hedge">3% hedge</a><a href="#s-insp">Trade inspector</a><a href="#s-perf">Charts</a><a href="#s-all">Every weekend</a><a href="#s-risk">Risks</a><a href="#s-live">Live checklist</a>
+  </nav>
+</header>
+
+<section id="s-res" aria-labelledby="h-res">
+  <h2 id="h-res">Results at a glance</h2>
+  <div class="tiles">
+    <div class="tile"><span class="k">Account</span><span class="v" data-v="final"></span><span class="s">from <span data-v="cap"></span> · <span data-v="total"></span></span></div>
+    <div class="tile"><span class="k">Per year</span><span class="v" data-v="cagr"></span><span class="s">compounded</span></div>
+    <div class="tile"><span class="k">Max drawdown</span><span class="v" data-v="maxdd"></span><span class="s"><span data-v="ddspan"></span></span></div>
+    <div class="tile"><span class="k">Weekends won</span><span class="v" data-v="win"></span><span class="s">Saturday <span data-v="sat_win"></span> · Sunday <span data-v="sun_win"></span></span></div>
+    <div class="tile"><span class="k">Sharpe (weekly)</span><span class="v" data-v="sharpe"></span><span class="s">annualised</span></div>
+    <div class="tile"><span class="k">Worst weekend</span><span class="v" data-v="worstwk"></span><span class="s" data-v="worstwkd"></span></div>
+  </div>
+  <div class="verdict">
+    <h2>What to take from this</h2>
+    <ul class="tight">
+      <li><strong>The edge is the weekend calendar, not daily vol in general.</strong> Saturday options are priced for more movement than Saturdays deliver, and Sunday options for less than Sundays deliver, because Monday's 08:00 expiry carries the weekend gap into the Asian/European open. Other weekdays showed no edge.</li>
+      <li><strong>Sunday made most of the money</strong> (<span data-v="sun_total"></span>) though it wins only <span data-v="sun_win"></span> of the time. Saturday added <span data-v="sat_total"></span> with a <span data-v="sat_win"></span> hit rate. Together they offset each other's bad weekends.</li>
+      <li><strong>The 3% hedge is close-to-free insurance.</strong> Its net result was <span data-v="hedge_net"></span> in total, yet the yearly return is about the same with it (<span data-v="cagr"></span>) as without (<span data-v="nh_cagr"></span>). It cut the max drawdown from <span data-v="nh_dd"></span> to <span data-v="maxdd"></span> and the worst single day from <span data-v="nh_worst"></span> to <span data-v="worst_day"></span>.</li>
+      <li><strong>Recovery sizing is gentle</strong>: at most 1.5× the account, and only on Saturdays. It was active on <span data-v="rec_share"></span> of Saturdays and adds about <span data-v="rec_gain"></span> a year over fixed 1× sizing.</li>
+      <li><strong>Expect flat years.</strong> 2023, 2024 and 2026 so far returned <span data-v="y2023"></span>, <span data-v="y2024"></span> and <span data-v="y2026"></span>, and nearly all the profit came in 2021, 2022 and 2025. A random 2-year resample of the history looks kinder (median <span data-v="boot_med"></span>/yr, only <span data-v="boot_loss"></span> of paths lost money) because it mixes good and bad stretches. Plan for a year that makes nothing.</li>
+      <li><strong>How to use it:</strong> start at 0.5× the account for 8–12 weekends to check that your real fills match the 1.5% haircut assumed here, then move to 1×. The backtest is a USD account, so sell the wstETH first or short 62.45 ETH of perp against it before trading.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="s-rules" aria-labelledby="h-rules">
+  <h2 id="h-rules">The rules, in order of the weekend</h2>
+  <p>All times are UTC (your local time shown underneath). Deribit daily options expire at 08:00 UTC, so a Saturday option lives exactly 24 hours, and so does a Sunday option. One contract = 1 ETH.</p>
+  <ol class="timeline" aria-label="Weekend timeline">
+    <li class="sat"><span class="t">Sat 08:00</span><span class="lt" data-local="8"></span><span class="d"><b>Sell</b> the ATM call and put expiring Sunday 08:00. Size = account × (1 + recovery), max 1.5×.</span></li>
+    <li class="sat"><span class="t">Sat 09:00 → Sun 05:00</span><span class="lt">every hour</span><span class="d">If ETH is <b>3% or more</b> from the strike, <b>open a perp hedge once</b>: size = straddle delta × contracts.</span></li>
+    <li class="sat"><span class="t">Sun 06:00</span><span class="lt" data-local="6"></span><span class="d"><b>Close the hedge</b> (if open) 2 hours before expiry.</span></li>
+    <li class="sun"><span class="t">Sun 08:00</span><span class="lt" data-local="8"></span><span class="d">Saturday straddle <b>settles</b>. <b>Buy</b> the ATM call and put expiring Monday 08:00, size = account × 1.</span></li>
+    <li class="end"><span class="t">Mon 08:00</span><span class="lt" data-local="8"></span><span class="d">Sunday straddle <b>settles</b>. Flat until next Saturday.</span></li>
+  </ol>
+  <div class="rules">
+    <div class="rule">
+      <h3><span class="n">1</span>Saturday: sell the straddle</h3>
+      <p>At 08:00 UTC sell the call and the put at the listed strike nearest to ETH, expiring Sunday 08:00. Use limit orders a little under the mark. The model assumes you get <strong>mark − 1.5%</strong> and pay a <strong>0.03% fee</strong> per leg.</p>
+      <div class="why">Why: Saturday's options are priced for more movement than Saturdays deliver. A seller kept about <span data-v="sat_keep"></span> of the premium on average.</div>
+    </div>
+    <div class="rule">
+      <h3><span class="n">2</span>Saturday: hedge once at 3%</h3>
+      <p>Check the hourly close. The first time ETH is ≥3% above or below the strike, trade the perp against the straddle's delta: <strong>short perp after a fall, long perp after a rise</strong>. Hold that fixed size, no re-balancing, and close it at Sunday 06:00. At most one hedge per Saturday.</p>
+      <div class="why">Why: a 3% move in a few hours is the start of most of the large Saturday losses. Locking in the delta at that point stops a trend from doubling the loss. A small move that reverses costs a little.</div>
+    </div>
+    <div class="rule">
+      <h3><span class="n">3</span>Saturday: recovery sizing</h3>
+      <p>If the account is below its previous high, add extra size so that its premium alone repays <strong>1/8 of the gap</strong>. Total size is capped at <strong>1.5×</strong> the account. Back at a new high, return to 1×.</p>
+      <div class="why">Why: it speeds up getting back to the high without martingale risk. Eight good Saturdays clear the gap, and the 1.5× cap keeps a bad run survivable.</div>
+    </div>
+    <div class="rule">
+      <h3><span class="n">4</span>Sunday: buy the straddle</h3>
+      <p>At 08:00 UTC, right after the Saturday option settles, buy the ATM call and put expiring Monday 08:00, with notional equal to the account (1×). No hedge and no recovery: hold to expiry. The model assumes you pay <strong>mark + 1.5%</strong> plus fees.</p>
+      <div class="why">Why: Sunday options are priced as if Sunday were as quiet as Saturday. But the Monday 08:00 expiry includes Sunday evening and the Asia open, when the weekend's news gets priced. The buyer made about <span data-v="sun_keep"></span> over the premium paid.</div>
+    </div>
+  </div>
+</section>
+
+<section id="s-why" aria-labelledby="h-why">
+  <h2 id="h-why">Why it works: premium vs. the move that followed</h2>
+  <p>A straddle pays the absolute move from the strike to expiry. So the seller's edge is <strong>premium − |move|</strong> and the buyer's edge is <strong>|move| − premium</strong>. These figures are net of the 1.5% haircut and fees, as a % of notional, averaged per weekend.</p>
+  <div class="card pad"><div class="chart" id="edgechart"></div>
+    <div class="legend" aria-hidden="true"><span><i class="key-bar" style="background:var(--s1)"></i>Saturday premium received</span><span><i class="key-bar" style="background:var(--s2)"></i>Sunday premium paid</span><span><i class="key-dot" style="background:var(--ink)"></i>Average |move| that followed</span></div>
+  </div>
+  <div class="scroll"><table id="edgetable" aria-label="Edge by year"></table></div>
+  <p class="note" id="edgenote"></p>
+</section>
+
+<section id="s-size" aria-labelledby="h-size">
+  <h2 id="h-size">How each position is sized</h2>
+  <p>Below are the formulas, worked through with the numbers from the most recent weekend in the data, <strong data-v="lastdate"></strong>. The trade inspector further down does the same for any weekend.</p>
+  <div class="rules stack">
+    <div class="rule">
+      <h3><span class="n">A</span>Saturday: how many contracts to sell</h3>
+      <div class="split">
+        <div class="formula"><div>net per ETH = (call + put) × (1 − 1.5%) − fees</div><div>rate = net per ETH ÷ ETH price</div><div>extra = (previous high − account) ÷ (8 × rate)</div><div>notional = min(account + extra, 1.5 × account)</div><div>contracts = notional ÷ ETH price</div></div>
+        <table id="szsat" aria-label="Saturday sizing, latest weekend"></table>
+      </div>
+      <div class="why">In words: the extra notional is the amount whose premium alone pays back one eighth of the drawdown. In this weekend that would have been far more than the account, so the 1.5× cap applied. That was the case on <span data-v="cap_share"></span> of all Saturdays.</div>
+    </div>
+    <div class="rule">
+      <h3><span class="n">B</span>Hedge: how much perp to trade</h3>
+      <div class="split">
+        <div class="formula"><div>trigger: |ETH ÷ strike − 1| ≥ 3% on an hourly close (Sat 08:00 to Sun 05:00)</div><div>hedge ETH = (Δcall + Δput) × contracts</div><div>Δ from Black-Scholes at the same IV with the hours left to expiry</div><div>positive → buy perp · negative → sell perp</div><div>close all at Sun 06:00</div></div>
+        <table id="szhedge" aria-label="Hedge sizing example"></table>
+      </div>
+      <div class="why">Δcall + Δput is the straddle's delta per contract: 0 at the strike, and close to ±1 once ETH is several percent away with only hours left. The hedge sets the position's net delta back to zero at that moment and then is left alone.</div>
+    </div>
+    <div class="rule">
+      <h3><span class="n">C</span>Sunday: how many contracts to buy</h3>
+      <div class="split">
+        <div class="formula"><div>cost per ETH = (call + put) × (1 + 1.5%) + fees</div><div>notional = account after Saturday (1×)</div><div>contracts = notional ÷ ETH price</div><div>max loss = contracts × cost per ETH</div></div>
+        <table id="szsun" aria-label="Sunday sizing, latest weekend"></table>
+      </div>
+      <div class="why">No recovery on Sunday. The same rule on the Sunday leg (8 weekends, cap 1.5×) lifts the return to <span data-v="sr_cagr"></span>/yr but deepens the max drawdown to <span data-v="sr_dd"></span>. A leg that wins less than half the time is a poor one to size up after losses.</div>
+    </div>
+  </div>
+  <p class="note">Margin: under Deribit standard margin a short ATM straddle needs roughly 15% of the index per leg plus the option's mark, about <strong>32% of notional</strong>. At the 1.5× cap that is about 48% of the account, plus margin for the perp hedge. The long Sunday straddle is fully paid, and its premium is the most you can lose. Sizing is in USD: in an ETH-margined account, hedge the ETH collateral with a perp short or the results also carry the ETH price.</p>
+</section>
+
+<section id="s-hedge" aria-labelledby="h-hedge">
+  <h2 id="h-hedge">The 3% hedge: what it did</h2>
+  <p>The hedge triggered on <strong data-v="triggers"></strong> of <span data-v="weekends"></span> Saturdays (<span data-v="trig_down"></span> after a fall, <span data-v="trig_up"></span> after a rise). The median trigger came at <span data-v="trig_hour"></span> UTC. It made money on only <span data-v="trig_helped"></span> of them, but when it helped it added <span data-v="h_up"></span> of the account on average, and when it hurt it cost <span data-v="h_dn"></span>. The largest save was <span data-v="h_max"></span>. Below, each dot is a triggered Saturday. Dots above the diagonal are Saturdays where the hedge improved the result.</p>
+  <div class="two">
+    <div class="card pad"><div class="chart" id="hedgechart"></div>
+      <div class="legend" aria-hidden="true"><span><i class="key-dot" style="background:var(--s3)"></i>Hedge helped</span><span><i class="key-dot" style="background:var(--neg)"></i>Hedge hurt</span><span><i class="key-dash"></i>No change</span></div>
+    </div>
+    <div>
+      <div class="scroll"><table id="hedgetable" aria-label="Hedge summary"></table></div>
+      <p class="note">Hedge P&amp;L includes 0.05% trading cost on the way in and out (taker fee plus slippage on the perp).</p>
+    </div>
+  </div>
+</section>
+
+<section id="s-insp" aria-labelledby="h-insp">
+  <h2 id="h-insp">Trade inspector: any weekend, step by step</h2>
+  <p>Pick a highlighted weekend or any date. The chart shows the 48 hours from Saturday 08:00 to Monday 08:00. The tickets show every number that went into the trades.</p>
+  <div class="chips" id="presets" role="group" aria-label="Highlighted weekends"></div>
+  <div class="pick"><label for="wsel">Or choose a weekend</label><select id="wsel"></select><button class="step" id="prevw" aria-label="Previous weekend">←</button><button class="step" id="nextw" aria-label="Next weekend">→</button></div>
+  <div class="insp" id="insp" aria-live="polite">
+    <div class="insp-head"><h3 id="ih"></h3><span class="badge" id="ib"></span></div>
+    <p class="story" id="istory"></p>
+    <div class="chart" id="ichart"></div>
+    <div class="legend" aria-hidden="true"><span><i class="key-line" style="background:var(--ink)"></i>ETH hourly</span><span><i class="key-line" style="background:var(--s1)"></i>Saturday strike</span><span><i class="key-dash"></i>±3% hedge trigger</span><span><i class="key-line" style="background:var(--s2)"></i>Sunday strike</span><span><i class="key-dot" style="background:var(--s3)"></i>Hedge open → close</span></div>
+    <div class="tickets" id="itickets"></div>
+  </div>
+</section>
+
+<section id="s-perf" aria-labelledby="h-perf">
+  <h2 id="h-perf">Performance</h2>
+  <div class="card pad"><div class="chart" id="eqchart"></div></div>
+  <p class="note">Top: account value after each weekend. Middle: distance below the previous high. Bottom: Saturday size as a multiple of the account. Bars above 1× mark recovery sizing, and the cap is 1.5×.</p>
+  <h3>Year by year</h3>
+  <div class="scroll"><table id="yeartable" aria-label="Yearly results"></table></div>
+  <h3>Month by month</h3>
+  <div class="scroll"><table id="monthtable" aria-label="Monthly returns"></table></div>
+  <div class="two">
+    <div>
+      <h3>How weekends turned out</h3>
+      <div class="card pad"><div class="chart" id="histchart"></div></div>
+      <p class="note">Weekend result as % of the account at Saturday 08:00. Average win <span data-v="avg_win"></span> and average loss <span data-v="avg_loss"></span>. The longest losing streak was <span data-v="longest"></span> weekends.</p>
+    </div>
+    <div>
+      <h3>Where the money came from</h3>
+      <div class="scroll"><table id="srctable" aria-label="Profit sources"></table></div>
+      <p class="note">Options P&amp;L = premium received or paid against the expiry payout. The hedge line is the perp P&amp;L net of its trading cost.</p>
+    </div>
+  </div>
+</section>
+
+<section id="s-all" aria-labelledby="h-all">
+  <h2 id="h-all">Every weekend</h2>
+  <p>Grouped by year. Click a date to open that weekend in the trade inspector. Size above 1× (bold) means recovery sizing was active. “Hedge” shows the direction, the hour (UTC) and the perp size.</p>
+  <div id="alltables"></div>
+</section>
+
+<section id="s-risk" aria-labelledby="h-risk">
+  <h2 id="h-risk">Risks and what the backtest cannot see</h2>
+  <ul class="tight">
+    <li><strong>Fills are the biggest unknown.</strong> The model assumes you sell 1.5% under the mark and buy 1.5% over it. With fills at the mark the result would be <span data-v="fill0"></span>/yr, at 3% from mark <span data-v="fill3"></span>/yr, and at 5% <span data-v="fill5"></span>/yr. Across all trades in next-day options, the median gap between trade price and mark was <span data-v="sp_sat"></span> on Saturdays and <span data-v="sp_sun"></span> on Sundays. That figure is inflated by cheap out-of-the-money options and mark lag, but it is why the first weeks should log every fill against the mark.</li>
+    <li><strong>Capacity.</strong> At $1M the trade is ~500 ETH per leg. That is fine on Deribit's daily expiries most weekends, but it is a large share of a quiet Saturday's volume. Above ~$2–3M, split the orders or use a block trade.</li>
+    <li><strong>Strike rounding.</strong> The model sets the strike exactly at the 08:00 price. Real strikes sit on a grid, so ETH can be a fraction of a percent away. At 60% IV, 0.6% away is a straddle delta of about ±0.17 per contract. Offset it with the perp at entry to match the model.</li>
+    <li><strong>Big Saturday moves.</strong> The largest in the data was <span data-v="bigmove"></span> on <span data-v="bigmoved"></span>: <span data-v="bigopt"></span> of the account before the hedge, <span data-v="bigsat"></span> after it. A 20% Saturday at the 1.5× cap would cost about 27% before the hedge. The worst weekend overall was <span data-v="worstwk"></span> (<span data-v="worstwkd"></span>).</li>
+    <li><strong>The edge can fade.</strong> If more desks sell Sunday options, or vol sellers move to Saturday, it narrows. Watch the rolling 26-week Sunday result. If it is negative while Saturday is also negative, cut to 0.5×.</li>
+    <li><strong>Random resample.</strong> 300 two-year paths built from 10-day blocks of the real history: median <span data-v="boot_med"></span>/yr, worst 5% <span data-v="boot_p5"></span>/yr, <span data-v="boot_loss"></span> of paths lost money, median max drawdown <span data-v="boot_dd"></span>, worst 5% drawdown <span data-v="boot_dd5"></span>.</li>
+  </ul>
+</section>
+
+<section id="s-live" aria-labelledby="h-live">
+  <h2 id="h-live">Live checklist for one weekend</h2>
+  <ol class="check" id="checklist">
+    <li><span class="when">Fri evening</span><span>Check the account value and the previous high. If below the high, compute the Saturday size: <code>extra = gap ÷ (8 × rate)</code>, capped at 1.5×. Keep at least 50% of the account free for margin.</span></li>
+    <li><span class="when">Sat 07:55<small data-local="7.92"></small></span><span>Read the index and the Sunday-expiry ATM call and put marks. Contracts = notional ÷ ETH. Place sell limits at about mark − 1%, then walk down to mark − 2% if unfilled by 08:10.</span></li>
+    <li><span class="when">Sat 08:15<small data-local="8.25"></small></span><span>Set price alerts at strike × 1.03 and strike × 0.97. Write down Δcall + Δput per contract so the hedge size is ready.</span></li>
+    <li><span class="when">Alert fires<small>before Sun 06:00</small></span><span>Once, on the hourly close: hedge = (Δcall + Δput) × contracts. Positive means buy perp, negative means sell perp. Don't adjust it later.</span></li>
+    <li><span class="when">Sun 06:00<small data-local="6"></small></span><span>Close the perp hedge at market.</span></li>
+    <li><span class="when">Sun 08:00<small data-local="8"></small></span><span>The Saturday straddle settles automatically. Then buy the Monday-expiry ATM call and put: contracts = account ÷ ETH, limit at about mark + 1%.</span></li>
+    <li><span class="when">Mon 08:00<small data-local="8"></small></span><span>The Sunday straddle settles. Log the fill prices vs mark, the hedge, and the P&amp;L. Update the high-water mark.</span></li>
+  </ol>
+</section>
+
+<footer>
+  <div>Data: Deribit ETH daily-option trades (history API) for the ATM IV at 08:00 UTC each day, and hourly ETH-PERP bars for the paths. Premiums are priced with Black-Scholes at the traded IV. Strike = ETH at 08:00. The hourly path is used for the hedge trigger and execution.</div>
+  <div>Settings: <code>side_by_dow={Sat: sell, Sun: buy}</code>, <code>spread=1.5%</code>, <code>recovery: rec_k=8, rec_cap=1.5×</code>, <code>hedge_trigger=3%, static, closed 2h before expiry</code>, start $125,411 on 27 Mar 2021.</div>
+  <div>Rebuild: <code>python3 report/build_weekend_report.py</code> → <code>results/weekend_strategy.html</code>. Backtest results are not a forecast. Option liquidity, fills and margin rules change.</div>
+</footer>
+</main>
+
+<script>
+const D = __DATA__;
+const S = D.stats, WK = D.weeks;
+const NS = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+const MINUS = "−";
+function fp(v, d = 1) { if (v == null || isNaN(v)) return "–"; if (Math.abs(v) < 0.5 * Math.pow(10, -d)) v = 0; return (v > 0 ? "+" : v < 0 ? MINUS : "") + Math.abs(v).toFixed(d) + "%"; }
+function pc(v, d = 1) { return (v < 0 ? MINUS : "") + Math.abs(v).toFixed(d) + "%"; }
+function usd(v, d = 0) { if (v == null || isNaN(v)) return "–"; const s = Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); return (v < 0 && Math.abs(v) >= 0.5 * Math.pow(10, -d) ? MINUS : "") + "$" + s; }
+function sUsd(v, d = 0) { if (Math.abs(v) < 0.5 * Math.pow(10, -d)) return "$0"; return (v > 0 ? "+" : MINUS) + "$" + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+function num(v, d = 1) { return (v < 0 ? MINUS : "") + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+function kUsd(v) { if (v === 0) return "$0"; return Math.abs(v) >= 1e6 ? "$" + (v / 1e6).toFixed(2) + "M" : "$" + Math.round(v / 1e3) + "k"; }
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function dstr(s, dow) { const [y, m, d] = s.split("-").map(Number); return (dow ? dow + " " : "") + d + " " + MON[m - 1] + " " + y; }
+function hh(h) { return String(((8 + h) % 24 + 24) % 24).padStart(2, "0") + ":00"; }
+const tone = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
+function makeTip(host) { const t = document.createElement("div"); t.className = "tip"; t.hidden = true; host.appendChild(t); return t; }
+function tipRow(tip, key, val, color) {
+  const r = document.createElement("div"); r.className = "row";
+  const a = document.createElement("span");
+  if (color) { const k = document.createElement("i"); k.className = "key-dot"; k.style.background = color; a.appendChild(k); }
+  a.appendChild(document.createTextNode(key));
+  const b = document.createElement("span"); b.className = "tv"; b.textContent = val;
+  r.appendChild(a); r.appendChild(b); tip.appendChild(r);
+}
+function tipHead(tip, t) { tip.replaceChildren(); const hd = document.createElement("div"); hd.className = "hd"; hd.textContent = t; tip.appendChild(hd); }
+function placeTip(tip, host, x, y) {
+  const w = host.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+  let left = x + 14; if (left + tw > w) left = x - tw - 14; if (left < 0) left = 0;
+  let top = y - th / 2; if (top < 0) top = 0;
+  tip.style.left = left + "px"; tip.style.top = top + "px";
+}
+function clear(host) { host.querySelectorAll("svg,.tip").forEach(n => n.remove()); }
+
+/* ---------- derived numbers ---------- */
+WK.forEach((w, i) => {
+  w.i = i;
+  w.hnet = w.hpnl - w.hcost;
+  w.satpct = w.satpnl / w.eq0 * 100;
+  w.optpct = w.opt / w.eq0 * 100;
+  w.sunpct = w.sun_eq0 ? w.sunpnl / w.sun_eq0 * 100 : 0;
+  w.has_sun = w.path_sun != null;
+});
+const trig = WK.filter(w => w.trig != null);
+const hedgeNet = WK.reduce((a, w) => a + w.hnet, 0);
+const yr = Object.fromEntries(D.yearly.map(y => [y.year, y]));
+const last = WK[WK.length - 1];
+const lastFull = [...WK].reverse().find(w => w.has_sun);
+const worstW = WK.reduce((a, w) => w.wkpct < a.wkpct ? w : a);
+const bestW = WK.reduce((a, w) => w.wkpct > a.wkpct ? w : a);
+const satKeep = WK.reduce((a, w) => a + (w.rate * 100 - Math.abs(w.move)), 0) / WK.reduce((a, w) => a + w.rate * 100, 0);
+const sunW = WK.filter(w => w.has_sun);
+const avgOf = a => a.length ? a.reduce((s, w) => s + w.hnet / w.eq0 * 100, 0) / a.length : 0;
+const bigW = WK.reduce((a, w) => Math.abs(w.move) > Math.abs(a.move) ? w : a);
+const sunKeep = sunW.reduce((a, w) => a + (Math.abs(w.sun_move) - w.sun_cost / w.sun_notional * 100), 0) / sunW.reduce((a, w) => a + w.sun_cost / w.sun_notional * 100, 0);
+
+const V = {
+  period: dstr(S.start) + " – " + dstr(lastFull.sun),
+  weekends: String(S.weekends), cap: usd(S.cap), final: usd(S.final), total: fp(S.total, 0), cagr: fp(S.cagr), maxdd: pc(S.maxdd),
+  ddspan: "peak " + dstr(S.dd_peak) + ", recovered " + (S.dd_rec ? dstr(S.dd_rec) : "not yet"),
+  win: Math.round(S.win * 100) + "%", sat_win: Math.round(S.sat_win * 100) + "%", sun_win: Math.round(S.sun_win * 100) + "%",
+  sharpe: S.sharpe.toFixed(2), worstwk: fp(worstW.wkpct), worstwkd: dstr(worstW.sat, "Sat") + ", " + sUsd(worstW.wk),
+  sun_total: sUsd(S.sun_total), sat_total: sUsd(S.sat_total), hedge_net: sUsd(hedgeNet),
+  nh_cagr: fp(S.nohedge.cagr), nh_dd: pc(S.nohedge.maxdd), rec_share: Math.round(S.rec_share * 100) + "%",
+  rec_gain: (S.cagr - S.norec.cagr).toFixed(1) + " points",
+  y2023: fp(yr[2023].ret), y2024: fp(yr[2024].ret), y2026: fp(yr[2026].ret),
+  boot_loss: (S.boot.loss_2y * 100).toFixed(1) + "%", boot_med: fp(S.boot.cagr_median), boot_p5: fp(S.boot.cagr_p5),
+  boot_dd: pc(S.boot.dd_median), boot_dd5: pc(S.boot.dd_p5),
+  sat_keep: Math.round(satKeep * 100) + "%", sun_keep: (sunKeep >= 0 ? "+" : MINUS) + Math.round(Math.abs(sunKeep) * 100) + "%",
+  lastdate: dstr(lastFull.sat, "Sat") + " – " + dstr(lastFull.sun, "Sun"),
+  triggers: String(S.triggers), trig_down: String(S.trig_down), trig_up: String(S.trig_up), trig_hour: String(Math.round(S.trig_hour + 8) % 24).padStart(2, "0") + ":00",
+  trig_helped: Math.round(trig.filter(w => w.hnet > 0).length / trig.length * 100) + "%",
+  nh_worst: pc(S.nohedge.worst), worst_day: pc(S.worst_day),
+  h_up: fp(avgOf(trig.filter(w => w.hnet > 0)), 1), h_dn: fp(avgOf(trig.filter(w => w.hnet <= 0)), 1),
+  h_max: (() => { const m = trig.reduce((a, w) => w.hnet / w.eq0 > a.hnet / a.eq0 ? w : a); return fp(m.hnet / m.eq0 * 100) + " on " + dstr(m.sat); })(),
+  fill0: fp(S.fills["0.000"].cagr), fill3: fp(S.fills["0.030"].cagr), fill5: fp(S.fills["0.050"].cagr),
+  sp_sat: Math.round(S.spread_sat * 100) + "%", sp_sun: Math.round(S.spread_sun * 100) + "%",
+  bigmove: fp(bigW.move), bigmoved: dstr(bigW.sat, "Sat"), bigopt: fp(bigW.optpct), bigsat: fp(bigW.satpct),
+  cap_share: Math.round(S.cap_share * 100) + "%", sr_cagr: fp(S.sunrec.cagr), sr_dd: pc(S.sunrec.maxdd),
+  avg_win: fp(S.avg_win), avg_loss: fp(S.avg_loss), longest: String(S.longest),
+};
+document.querySelectorAll("[data-v]").forEach(el => { const k = el.dataset.v; if (V[k] === undefined) console.warn("missing", k); el.textContent = V[k] ?? "–"; });
+// local-time hints
+try {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  document.querySelectorAll("[data-local]").forEach(el => {
+    const h = parseFloat(el.dataset.local), d = new Date(Date.UTC(2026, 0, 3, Math.floor(h), Math.round((h % 1) * 60)));
+    const t = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+    el.textContent = tz && tz !== "UTC" && tz !== "Etc/UTC" ? t + " your time (winter)" : "";
+  });
+} catch (e) { /* leave blank */ }
+
+/* ---------- edge by year ---------- */
+function edgeRows() {
+  const out = [];
+  D.yearly.forEach(y => out.push({ year: y.year, sr: y.sat_rate, sm: y.sat_move, ur: y.sun_rate, um: y.sun_move }));
+  return out;
+}
+function drawEdge() {
+  const host = document.getElementById("edgechart"); clear(host);
+  const R = edgeRows(), W = host.clientWidth, L = 40, Rr = 10, T = 12, B = 28, h = 220;
+  const max = Math.ceil(Math.max(...R.flatMap(r => [r.sr, r.sm, r.ur, r.um])) * 2) / 2 + 0.5;
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${h}`, width: W, height: h }, host);
+  const y = v => T + (1 - v / max) * (h - T - B);
+  for (let v = 0; v <= max + 1e-9; v += 1) {
+    svgEl("line", { x1: L, x2: W - Rr, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--axis)" : "var(--rule)", "stroke-width": 1 }, svg);
+    const t = svgEl("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, svg); t.textContent = v + "%";
+  }
+  const gw = (W - L - Rr) / R.length, bw = Math.min(26, gw * 0.28);
+  const tip = makeTip(host);
+  R.forEach((r, i) => {
+    const cx = L + gw * (i + 0.5);
+    const t = svgEl("text", { x: cx, y: h - 8, "text-anchor": "middle" }, svg); t.textContent = r.year;
+    [[r.sr, r.sm, "var(--s1)", -1, "Saturday", "sell"], [r.ur, r.um, "var(--s2)", 1, "Sunday", "buy"]].forEach(([prem, mv, col, side, lab, act]) => {
+      const x0 = cx + side * (bw * 0.5 + 3) - bw / 2;
+      const g = svgEl("g", { tabindex: 0, role: "img", "aria-label": `${r.year} ${lab}: premium ${prem.toFixed(2)}%, average move ${mv.toFixed(2)}%` }, svg);
+      svgEl("rect", { x: x0, y: y(prem), width: bw, height: y(0) - y(prem), rx: 2, fill: col, "fill-opacity": 0.8 }, g);
+      svgEl("line", { x1: x0 - 3, x2: x0 + bw + 3, y1: y(mv), y2: y(mv), stroke: "var(--ink)", "stroke-width": 2 }, g);
+      svgEl("circle", { cx: x0 + bw / 2, cy: y(mv), r: 3.5, fill: "var(--ink)" }, g);
+      const show = (px, py) => {
+        tipHead(tip, r.year + " · " + lab + " (" + act + ")");
+        tipRow(tip, "Premium", prem.toFixed(2) + "%"); tipRow(tip, "Avg |move|", mv.toFixed(2) + "%");
+        const edge = act === "sell" ? prem - mv : mv - prem;
+        tipRow(tip, act === "sell" ? "Seller keeps" : "Buyer gains", fp(edge, 2) + " (" + fp(edge / prem * 100, 0) + " of premium)");
+        tip.hidden = false; placeTip(tip, host, px, py);
+      };
+      g.addEventListener("pointermove", e => { const b = host.getBoundingClientRect(); show(e.clientX - b.left, e.clientY - b.top); });
+      g.addEventListener("pointerleave", () => { tip.hidden = true; });
+      g.addEventListener("focus", () => show(x0 + bw, y(prem)));
+      g.addEventListener("blur", () => { tip.hidden = true; });
+    });
+  });
+}
+(function edgeTable() {
+  const t = document.getElementById("edgetable");
+  let h = "<thead><tr><th>Year</th><th>Sat premium</th><th>Sat avg |move|</th><th>Seller keeps</th><th>Sun premium</th><th>Sun avg |move|</th><th>Buyer gains</th></tr></thead><tbody>";
+  edgeRows().forEach(r => {
+    const se = (r.sr - r.sm) / r.sr * 100, be = (r.um - r.ur) / r.ur * 100;
+    h += `<tr><th scope="row">${r.year}${r.year === 2021 ? " <span class='muted'>(from Mar)</span>" : r.year === 2026 ? " <span class='muted'>(to Nov)</span>" : ""}</th><td>${r.sr.toFixed(2)}%</td><td>${r.sm.toFixed(2)}%</td><td class="${tone(se)}">${fp(se, 0)}</td><td>${r.ur.toFixed(2)}%</td><td>${r.um.toFixed(2)}%</td><td class="${tone(be)}">${fp(be, 0)}</td></tr>`;
+  });
+  t.innerHTML = h + "</tbody>";
+  const R = edgeRows(), badS = R.filter(r => r.sr < r.sm).map(r => r.year), badU = R.filter(r => r.um < r.ur).map(r => r.year);
+  const both = WK.filter(w => w.has_sun && w.satpnl < 0 && w.sunpnl < 0).length;
+  const lst = a => a.length ? a.join(" and ") : "none";
+  const thin = R.filter(r => r.um >= r.ur && (r.um - r.ur) / r.ur < 0.1).map(r => r.year);
+  document.getElementById("edgenote").textContent = `Selling Saturday lost money in ${badS.length ? lst(badS) : "no year"}. Buying Sunday made money in ${badU.length ? "every year except " + lst(badU) : "every year"}${thin.length ? ", though only slightly in " + thin.join(", ").replace(/, ([^,]*)$/, " and $1") : ""}. Both legs lost on the same weekend only ${Math.round(both / sunW.length * 100)}% of the time, and that is the point of running both.`;
+})();
+
+/* ---------- sizing tables (latest full weekend) ---------- */
+function rowsHTML(rows) {
+  return "<tbody>" + rows.map(r => `<tr class="${r[2] || ""}"><td>${r[0]}${r[3] ? `<span class="hint">${r[3]}</span>` : ""}</td><td>${r[1]}</td></tr>`).join("") + "</tbody>";
+}
+function satRows(w) {
+  const net = w.call + w.put - w.haircut - w.fee;
+  const extraCap = Math.min(w.extra_raw, 0.5 * w.eq0);
+  const rows = [
+    ["Account at Sat 08:00", usd(w.eq0)],
+    ["Previous high", usd(w.hwm), "", w.gap > 0.5 ? "gap " + usd(w.gap) + " (" + pc(-w.gap / w.hwm * 100) + ")" : "at the high, no recovery"],
+    ["ETH = strike", usd(w.S0, 2), "", "IV " + w.iv.toFixed(1) + "%, 24h to expiry"],
+    ["Call + put mark", usd(w.call, 2) + " + " + usd(w.put, 2)],
+    ["− 1.5% haircut − fees", MINUS + usd(w.haircut + w.fee, 2)],
+    ["Net premium per ETH", usd(net, 2), "", "rate " + (w.rate * 100).toFixed(3) + "% of notional"],
+  ];
+  if (w.gap > 0.5) rows.push(["Recovery extra", usd(extraCap), "", usd(w.gap) + " ÷ (8 × " + (w.rate * 100).toFixed(3) + "%) = " + usd(w.extra_raw) + (w.capped ? " → capped at 0.5× account" : "")]);
+  rows.push(["Notional", usd(w.notional), "", "size " + w.size.toFixed(2) + "× account"]);
+  rows.push(["Contracts (call and put each)", num(w.eth, 1) + " ETH"]);
+  rows.push(["Premium received", usd(w.prem), "tot"]);
+  rows.push(["Margin needed ≈ 32%", usd(0.32 * w.notional), "", pc(0.32 * w.notional / w.eq0 * 100, 0) + " of the account"]);
+  return rows;
+}
+function hedgeRows(w) {
+  if (w.trig == null) return [["Triggered?", "No", "", "max move " + pc(w.maxmove) + ", stayed inside ±3%"]];
+  const mv = (w.tprice / w.S0 - 1) * 100;
+  return [
+    ["Trigger", hh(w.trig) + " UTC", "", "ETH " + usd(w.tprice, 2) + " = " + fp(mv) + " from strike"],
+    ["Δcall + Δput per contract", num(w.hdelta, 3)],
+    ["Perp trade", (w.heth > 0 ? "Buy " : "Sell ") + num(Math.abs(w.heth), 1) + " ETH", "", num(w.hdelta, 3) + " × " + num(w.eth, 1) + " contracts"],
+    ["Closed Sun 06:00 at", usd(w.path_sat[22], 2)],
+    ["Perp P&L", sUsd(w.hpnl)],
+    ["Trading cost (0.05% × 2)", sUsd(-w.hcost)],
+    ["Hedge result", sUsd(w.hnet), "tot"],
+  ];
+}
+function sunRows(w) {
+  if (!w.has_sun) return [["Sunday", "not in data yet"]];
+  const per = w.sun_cost / w.sun_eth;
+  const fees = per - (w.sun_call + w.sun_put) * 1.015;
+  return [
+    ["Account at Sun 08:00", usd(w.sun_eq0)],
+    ["ETH = strike", usd(w.sun_S0, 2), "", "IV " + w.sun_iv.toFixed(1) + "%, 24h to expiry"],
+    ["Call + put mark", usd(w.sun_call, 2) + " + " + usd(w.sun_put, 2)],
+    ["+ 1.5% haircut + fees", "+" + usd((w.sun_call + w.sun_put) * 0.015 + fees, 2)],
+    ["Cost per ETH", usd(per, 2), "", (per / w.sun_S0 * 100).toFixed(3) + "% of notional"],
+    ["Notional (1×)", usd(w.sun_notional)],
+    ["Contracts (call and put each)", num(w.sun_eth, 1) + " ETH"],
+    ["Premium paid = max loss", usd(w.sun_cost), "tot"],
+  ];
+}
+document.getElementById("szsat").innerHTML = rowsHTML(satRows(lastFull));
+const hedgeEx = trig.reduce((a, w) => (w.hnet / w.eq0) > (a.hnet / a.eq0) ? w : a);
+document.getElementById("szhedge").innerHTML = rowsHTML([["Example", dstr(hedgeEx.sat, "Sat")], ...hedgeRows(hedgeEx)]);
+document.getElementById("szsun").innerHTML = rowsHTML(sunRows(lastFull));
+
+/* ---------- hedge chart + table ---------- */
+function drawHedge() {
+  const host = document.getElementById("hedgechart"); clear(host);
+  const W = host.clientWidth, L = 46, R = 12, T = 12, B = 40, h = Math.min(340, Math.max(260, W * 0.8));
+  const xs = trig.map(w => w.optpct), ys = trig.map(w => w.satpct);
+  const lo = Math.floor(Math.min(...xs, ...ys) / 2) * 2, hi = Math.ceil(Math.max(...xs, ...ys, 2) / 2) * 2;
+  const x = v => L + (v - lo) / (hi - lo) * (W - L - R), y = v => T + (1 - (v - lo) / (hi - lo)) * (h - T - B);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${h}`, width: W, height: h }, host);
+  const step = (hi - lo) > 16 ? 4 : 2;
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+    svgEl("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--axis)" : "var(--rule)", "stroke-width": 1 }, svg);
+    svgEl("line", { x1: x(v), x2: x(v), y1: T, y2: h - B, stroke: v === 0 ? "var(--axis)" : "var(--rule)", "stroke-width": 1 }, svg);
+    const a = svgEl("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, svg); a.textContent = fp(v, 0);
+    const b = svgEl("text", { x: x(v), y: h - B + 16, "text-anchor": "middle" }, svg); b.textContent = fp(v, 0);
+  }
+  svgEl("line", { x1: x(lo), y1: y(lo), x2: x(hi), y2: y(hi), stroke: "var(--muted)", "stroke-width": 1.25, "stroke-dasharray": "5 4" }, svg);
+  const xl = svgEl("text", { x: (L + W - R) / 2, y: h - 6, "text-anchor": "middle", class: "lbl2" }, svg); xl.textContent = "Saturday result without the hedge (% of account)";
+  const yl = svgEl("text", { x: L + 4, y: T + 12, class: "lbl2" }, svg); yl.textContent = "with the hedge ↑";
+  const tip = makeTip(host);
+  trig.forEach(w => {
+    const c = svgEl("circle", { cx: x(w.optpct), cy: y(w.satpct), r: 5, fill: w.hnet > 0 ? "var(--s3)" : "var(--neg)", "fill-opacity": 0.8, stroke: "var(--surface)", "stroke-width": 1.5, tabindex: 0, role: "img", "aria-label": `${w.sat}: without hedge ${fp(w.optpct)}, with hedge ${fp(w.satpct)}` }, svg);
+    c.style.cursor = "pointer";
+    const show = (px, py) => {
+      tipHead(tip, dstr(w.sat, "Sat") + " · " + (w.dir === "down" ? "fell" : "rose") + " 3% by " + hh(w.trig));
+      tipRow(tip, "Without hedge", fp(w.optpct)); tipRow(tip, "With hedge", fp(w.satpct)); tipRow(tip, "Hedge", sUsd(w.hnet));
+      tipRow(tip, "Settled vs strike", fp(w.move)); tip.hidden = false; placeTip(tip, host, px, py);
+    };
+    c.addEventListener("pointermove", e => { const b = host.getBoundingClientRect(); show(e.clientX - b.left, e.clientY - b.top); });
+    c.addEventListener("pointerleave", () => { tip.hidden = true; });
+    c.addEventListener("focus", () => show(x(w.optpct), y(w.satpct)));
+    c.addEventListener("blur", () => { tip.hidden = true; });
+    c.addEventListener("click", () => openWeek(w.i, true));
+  });
+}
+(function hedgeTable() {
+  const helped = trig.filter(w => w.hnet > 0), hurt = trig.filter(w => w.hnet <= 0);
+  const avg = a => a.length ? a.reduce((s, w) => s + w.hnet / w.eq0 * 100, 0) / a.length : 0;
+  const worstNo = trig.reduce((a, w) => w.optpct < a.optpct ? w : a);
+  const rows = [
+    ["Saturdays hedged", trig.length + " of " + WK.length],
+    ["After a fall / a rise", S.trig_down + " / " + S.trig_up],
+    ["Hedge helped", helped.length + " · avg " + fp(avg(helped), 2)],
+    ["Hedge hurt", hurt.length + " · avg " + fp(avg(hurt), 2)],
+    ["Options P&L on hedged Saturdays", sUsd(trig.reduce((s, w) => s + w.opt, 0))],
+    ["Hedge P&L on those Saturdays", sUsd(hedgeNet)],
+    ["Worst hedged Saturday, options only", fp(worstNo.optpct) + " → " + fp(worstNo.satpct) + " with hedge"],
+    ["Strategy without the hedge", fp(S.nohedge.cagr) + "/yr · max DD " + pc(S.nohedge.maxdd)],
+    ["Strategy with the hedge", fp(S.cagr) + "/yr · max DD " + pc(S.maxdd)],
+  ];
+  document.getElementById("hedgetable").innerHTML = "<tbody>" + rows.map(r => `<tr><th scope="row">${r[0]}</th><td>${r[1]}</td></tr>`).join("") + "</tbody>";
+})();
+
+/* ---------- trade inspector ---------- */
+const presets = (() => {
+  const calm = WK.filter(w => w.trig == null && w.has_sun && w.satpnl > 0 && w.sunpnl < 0 && w.size < 1.001);
+  const med = calm.slice().sort((a, b) => a.wkpct - b.wkpct)[Math.floor(calm.length / 2)];
+  const saved = trig.reduce((a, w) => (w.hnet / w.eq0) > (a.hnet / a.eq0) ? w : a);
+  const costly = trig.reduce((a, w) => (w.hnet / w.eq0) < (a.hnet / a.eq0) ? w : a);
+  const capw = [...WK].reverse().find(w => w.size > 1.499 && w.has_sun);
+  const sunBest = sunW.reduce((a, w) => w.sunpct > a.sunpct ? w : a);
+  return [
+    ["Typical weekend", med], ["Hedge saved the day", saved], ["Hedge cost money", costly], ["Best weekend", bestW],
+    ["Worst weekend", worstW], ["Recovery at the 1.5× cap", capw], ["Best Sunday", sunBest], ["Latest", lastFull],
+  ].filter(p => p[1]);
+})();
+const chipBox = document.getElementById("presets");
+presets.forEach(([lab, w]) => { const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = lab; b.dataset.i = w.i; b.setAttribute("aria-pressed", "false"); b.addEventListener("click", () => openWeek(w.i)); chipBox.appendChild(b); });
+const sel = document.getElementById("wsel");
+WK.forEach(w => { const o = document.createElement("option"); o.value = w.i; o.textContent = w.sat + "  " + fp(w.wkpct); sel.appendChild(o); });
+sel.addEventListener("change", () => openWeek(+sel.value));
+document.getElementById("prevw").addEventListener("click", () => openWeek(Math.max(0, cur - 1)));
+document.getElementById("nextw").addEventListener("click", () => openWeek(Math.min(WK.length - 1, cur + 1)));
+let cur = presets[0][1].i;
+
+function story(w) {
+  const s = [];
+  s.push(`On Saturday ${dstr(w.sat)} at 08:00 UTC the account was ${usd(w.eq0)}` + (w.gap > 0.5 ? `, ${pc(w.gap / w.hwm * 100)} below its high, so recovery raised the sale to ${w.size.toFixed(2)}×` : ", at its high, so the sale was 1×") +
+    `: ${num(w.eth, 1)} calls and ${num(w.eth, 1)} puts at the ${usd(w.S0, 2)} strike (IV ${w.iv.toFixed(0)}%) for ${usd(w.prem)} of premium.`);
+  if (w.trig != null) s.push(`At ${hh(w.trig)} UTC ETH was ${usd(w.tprice, 2)} (${fp((w.tprice / w.S0 - 1) * 100)} from the strike), so the hedge ${w.heth > 0 ? "bought" : "sold"} ${num(Math.abs(w.heth), 1)} ETH of perp and held it to 06:00 Sunday, for ${sUsd(w.hnet)}.`);
+  else s.push(`ETH never closed an hour 3% away from the strike (largest move ${pc(w.maxmove)}), so there was no hedge.`);
+  s.push(`It settled at ${usd(w.ST, 2)} (${fp(w.move)}): payout ${usd(w.payout)}, Saturday result <strong class="${tone(w.satpnl)}">${sUsd(w.satpnl)} (${fp(w.satpct)})</strong>.`);
+  if (w.has_sun) s.push(`On Sunday at 08:00 it bought ${num(w.sun_eth, 1)} calls and puts at ${usd(w.sun_S0, 2)} (IV ${w.sun_iv.toFixed(0)}%) for ${usd(w.sun_cost)}. ETH settled Monday at ${usd(w.sun_ST, 2)} (${fp(w.sun_move)}), paying ${usd(w.sun_payout)}: Sunday result <strong class="${tone(w.sunpnl)}">${sUsd(w.sunpnl)} (${fp(w.sunpct)})</strong>.`);
+  return s.join(" ");
+}
+function openWeek(i, scroll) {
+  cur = i; const w = WK[i];
+  sel.value = i;
+  chipBox.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.i === i)));
+  document.getElementById("ih").textContent = "Weekend of " + dstr(w.sat, "Sat");
+  const b = document.getElementById("ib"); b.textContent = sUsd(w.wk) + " · " + fp(w.wkpct); b.className = "badge " + tone(w.wk);
+  document.getElementById("istory").innerHTML = story(w);
+  const tk = document.getElementById("itickets");
+  const sat = satRows(w);
+  sat.push(["Sun 08:00 settlement", usd(w.ST, 2), "", fp(w.move) + " from strike"]);
+  sat.push(["Payout |ETH − strike| × contracts", MINUS + usd(w.payout)]);
+  sat.push(["Options P&L", sUsd(w.opt)]);
+  if (w.trig != null) sat.push(["Hedge", sUsd(w.hnet)]);
+  sat.push(["Saturday result", sUsd(w.satpnl) + " (" + fp(w.satpct) + ")", "tot"]);
+  const sun = sunRows(w);
+  if (w.has_sun) { sun.push(["Mon 08:00 settlement", usd(w.sun_ST, 2), "", fp(w.sun_move) + " from strike"]); sun.push(["Payout |ETH − strike| × contracts", "+" + usd(w.sun_payout)]); sun.push(["Sunday result", sUsd(w.sunpnl) + " (" + fp(w.sunpct) + ")", "tot"]); sun.push(["Account Mon 08:00", usd(w.eq2)]); }
+  tk.innerHTML = `<div class="ticket sat"><h4>Saturday · sell straddle <span>exp. Sun 08:00</span></h4><table>${rowsHTML(sat)}</table></div>` +
+    `<div class="ticket hedge"><h4>3% hedge · ETH-PERP <span>${w.trig != null ? "triggered" : "not triggered"}</span></h4><table>${rowsHTML(hedgeRows(w))}</table></div>` +
+    `<div class="ticket sun"><h4>Sunday · buy straddle <span>exp. Mon 08:00</span></h4><table>${rowsHTML(sun)}</table></div>`;
+  drawInspect();
+  if (scroll) document.getElementById("s-insp").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function drawInspect() {
+  const w = WK[cur], host = document.getElementById("ichart"); clear(host);
+  const P = w.path_sat.concat(w.has_sun ? w.path_sun.slice(1) : []);
+  const n = P.length - 1;
+  const W = host.clientWidth, L = 62, R = 14, T = 26, B = 30, h = W < 560 ? 240 : 290;
+  const K1 = w.S0, K2 = w.has_sun ? w.sun_S0 : null;
+  const vals = P.concat([K1 * 1.03, K1 * 0.97]);
+  const lo = Math.min(...vals) * 0.996, hi = Math.max(...vals) * 1.004;
+  const x = i => L + i / 48 * (W - L - R), y = v => T + (1 - (v - lo) / (hi - lo)) * (h - T - B);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${h}`, width: W, height: h }, host);
+  svgEl("rect", { x: x(0), y: T, width: x(24) - x(0), height: h - T - B, fill: "rgba(var(--sat-rgb),0.06)" }, svg);
+  svgEl("rect", { x: x(24), y: T, width: x(48) - x(24), height: h - T - B, fill: "rgba(var(--sun-rgb),0.06)" }, svg);
+  const l1 = svgEl("text", { x: x(0) + 6, y: T - 8, class: "lbl2" }, svg); l1.textContent = "Saturday: short " + w.size.toFixed(2) + "×";
+  const l2 = svgEl("text", { x: x(24) + 6, y: T - 8, class: "lbl2" }, svg); l2.textContent = "Sunday: long 1×";
+  // y ticks
+  const span = hi - lo, stepRaw = span / 4, mag = Math.pow(10, Math.floor(Math.log10(stepRaw))), step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= stepRaw);
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+    svgEl("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--rule)", "stroke-width": 1 }, svg);
+    const t = svgEl("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, svg); t.textContent = "$" + v.toLocaleString("en-US");
+  }
+  (W < 560 ? [0, 24, 48] : [0, 12, 24, 36, 48]).forEach(i => { const t = svgEl("text", { x: x(i), y: h - 10, "text-anchor": i === 0 ? "start" : i === 48 ? "end" : "middle" }, svg); t.textContent = ["Sat ", "Sat ", "Sun ", "Sun ", "Mon "][i / 12] + hh(i); });
+  // strikes and bands
+  svgEl("line", { x1: x(0), x2: x(24), y1: y(K1), y2: y(K1), stroke: "var(--s1)", "stroke-width": 1.75 }, svg);
+  [1.03, 0.97].forEach(m => svgEl("line", { x1: x(0), x2: x(22), y1: y(K1 * m), y2: y(K1 * m), stroke: "var(--muted)", "stroke-width": 1.25, "stroke-dasharray": "5 4" }, svg));
+  if (K2) svgEl("line", { x1: x(24), x2: x(48), y1: y(K2), y2: y(K2), stroke: "var(--s2)", "stroke-width": 1.75 }, svg);
+  // hedge window
+  if (w.trig != null) {
+    svgEl("line", { x1: x(w.trig), x2: x(22), y1: h - B - 3, y2: h - B - 3, stroke: "var(--s3)", "stroke-width": 5, "stroke-linecap": "round" }, svg);
+  }
+  let d = ""; P.forEach((v, i) => { d += (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1); });
+  svgEl("path", { d, fill: "none", stroke: "var(--ink)", "stroke-width": 1.75, "stroke-linejoin": "round" }, svg);
+  if (w.trig != null) {
+    [[w.trig, "hedge on"], [22, "off 06:00"]].forEach(([i, lab], k) => {
+      svgEl("circle", { cx: x(i), cy: y(P[i]), r: 5.5, fill: k ? "var(--surface)" : "var(--s3)", stroke: "var(--s3)", "stroke-width": 2.5 }, svg);
+      const above = y(P[i]) > T + 30;
+      const t = svgEl("text", { x: x(i), y: above ? y(P[i]) - 11 : y(P[i]) + 20, "text-anchor": "middle", class: "lbl2" }, svg); t.textContent = lab;
+    });
+  }
+  [[24, w.ST], [48, w.has_sun ? w.sun_ST : null]].forEach(([i, v]) => { if (v != null && i <= n) svgEl("circle", { cx: x(i), cy: y(v), r: 4.5, fill: i === 24 ? "var(--s1)" : "var(--s2)", stroke: "var(--surface)", "stroke-width": 2 }, svg); });
+  // hover
+  const tip = makeTip(host);
+  const cross = svgEl("line", { x1: 0, x2: 0, y1: T, y2: h - B, stroke: "var(--muted)", "stroke-width": 1, visibility: "hidden" }, svg);
+  const dot = svgEl("circle", { r: 4, fill: "var(--ink)", stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden" }, svg);
+  const hit = svgEl("rect", { x: L, y: T, width: W - L - R, height: h - T - B, fill: "transparent", tabindex: 0, "aria-label": "Hourly ETH price; use arrow keys to step through hours" }, svg);
+  let hi_ = 0;
+  const show = (i, py) => {
+    i = Math.max(0, Math.min(n, i)); hi_ = i;
+    cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", x(i)); dot.setAttribute("cy", y(P[i])); dot.setAttribute("visibility", "visible");
+    tipHead(tip, (i < 16 ? "Sat " : i < 40 ? "Sun " : "Mon ") + hh(i) + " UTC");
+    tipRow(tip, "ETH", usd(P[i], 2));
+    if (i <= 24) tipRow(tip, "vs Sat strike", fp((P[i] / K1 - 1) * 100, 2), "var(--s1)");
+    if (i >= 24 && K2) tipRow(tip, "vs Sun strike", fp((P[i] / K2 - 1) * 100, 2), "var(--s2)");
+    tip.hidden = false; placeTip(tip, host, x(i), py);
+  };
+  hit.addEventListener("pointermove", e => { const b = host.getBoundingClientRect(); show(Math.round((e.clientX - b.left - L) / (W - L - R) * 48), e.clientY - b.top); });
+  hit.addEventListener("pointerleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); });
+  hit.addEventListener("focus", () => show(hi_, 60));
+  hit.addEventListener("keydown", e => { if (e.key === "ArrowLeft") { show(hi_ - 1, 60); e.preventDefault(); } if (e.key === "ArrowRight") { show(hi_ + 1, 60); e.preventDefault(); } });
+  hit.addEventListener("blur", () => { tip.hidden = true; });
+}
+
+/* ---------- equity / drawdown / size ---------- */
+function drawEquity() {
+  const host = document.getElementById("eqchart"); clear(host);
+  const n = WK.length, W = host.clientWidth, L = 56, R = 12;
+  let hwm = S.cap; const dd = [], eq = [];
+  WK.forEach(w => { const lo_ = Math.min(w.eq1, w.eq2); const m = Math.max(hwm, w.eq1); dd.push((lo_ / Math.max(hwm, w.eq1) - 1) * 100); hwm = Math.max(m, w.eq2); eq.push(w.eq2); });
+  const maxEq = Math.ceil(Math.max(...eq) / 2e5) * 2e5;
+  const ddMin = Math.floor(Math.min(...dd) / 5) * 5;
+  const panels = [
+    { t: "Account value", h: 170, dom: [0, maxEq], ticks: [0, maxEq / 2, maxEq], fmt: kUsd, v: eq, kind: "line", c: "var(--s1)" },
+    { t: "Below previous high", h: 80, dom: [ddMin, 0], ticks: [ddMin, ddMin / 2, 0], fmt: v => pc(v, 0), v: dd, kind: "area", c: "var(--neg)" },
+    { t: "Saturday size (× account)", h: 70, dom: [1, 1.5], ticks: [1, 1.25, 1.5], fmt: v => v.toFixed(2) + "×", v: WK.map(w => w.size), kind: "bars", c: "var(--s1)" },
+  ];
+  const gap = 34, top0 = 22; let H = top0; panels.forEach(p => { p.y0 = H; H += p.h + gap; });
+  H -= 6;
+  const x = i => L + i / (n - 1) * (W - L - R);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H }, host);
+  panels.forEach(p => {
+    const y = v => p.y0 + (1 - (Math.max(p.dom[0], Math.min(p.dom[1], v)) - p.dom[0]) / (p.dom[1] - p.dom[0])) * p.h; p.y = y;
+    const t = svgEl("text", { x: L, y: p.y0 - 8, class: "lbl" }, svg); t.textContent = p.t;
+    p.ticks.forEach(v => { svgEl("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--rule)", "stroke-width": 1 }, svg); const tt = svgEl("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, svg); tt.textContent = p.fmt(v); });
+    if (p.kind === "bars") {
+      const bw = Math.max(1, (W - L - R) / n - 0.6);
+      p.v.forEach((v, i) => { if (v > 1.001) svgEl("rect", { x: x(i) - bw / 2, y: y(v), width: bw, height: y(1) - y(v), fill: p.c, "fill-opacity": v > 1.499 ? 0.95 : 0.55 }, svg); });
+    } else {
+      let d = ""; p.v.forEach((v, i) => { d += (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1); });
+      if (p.kind === "area") svgEl("path", { d: d + `L${x(n - 1)} ${y(0)} L${x(0)} ${y(0)} Z`, fill: p.c, "fill-opacity": 0.18 }, svg);
+      svgEl("path", { d, fill: "none", stroke: p.c, "stroke-width": p.kind === "line" ? 2 : 1.25, "stroke-linejoin": "round" }, svg);
+    }
+  });
+  const lastP = panels[panels.length - 1];
+  let prevY = WK[0].sat.slice(0, 4);
+  WK.forEach((w, i) => { const yv = w.sat.slice(0, 4); if (yv !== prevY) { panels.forEach(p => svgEl("line", { x1: x(i), x2: x(i), y1: p.y0, y2: p.y0 + p.h, stroke: "var(--rule)", "stroke-width": 1, "stroke-dasharray": "2 3" }, svg)); const tt = svgEl("text", { x: x(i), y: lastP.y0 + lastP.h + 18, "text-anchor": "middle" }, svg); tt.textContent = yv; prevY = yv; } });
+  const cross = svgEl("line", { x1: 0, x2: 0, y1: top0 - 4, y2: lastP.y0 + lastP.h, stroke: "var(--muted)", "stroke-width": 1, visibility: "hidden" }, svg);
+  const dots = panels.slice(0, 2).map(p => svgEl("circle", { r: 4, fill: p.c, stroke: "var(--surface)", "stroke-width": 2, visibility: "hidden" }, svg));
+  const tip = makeTip(host);
+  const hit = svgEl("rect", { x: L, y: 0, width: W - L - R, height: H, fill: "transparent", tabindex: 0, "aria-label": "Account by weekend; arrow keys step, Enter opens the weekend in the inspector" }, svg);
+  let ci = n - 1;
+  const show = (i, py) => {
+    i = Math.max(0, Math.min(n - 1, i)); ci = i; const w = WK[i], cx = x(i);
+    cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.setAttribute("visibility", "visible");
+    panels.slice(0, 2).forEach((p, k) => { dots[k].setAttribute("cx", cx); dots[k].setAttribute("cy", p.y(p.v[i])); dots[k].setAttribute("visibility", "visible"); });
+    tipHead(tip, "Weekend of " + dstr(w.sat, "Sat"));
+    tipRow(tip, "Account", usd(w.eq2)); tipRow(tip, "Weekend", sUsd(w.wk) + " (" + fp(w.wkpct) + ")");
+    tipRow(tip, "Saturday", fp(w.satpct)); tipRow(tip, "Sunday", fp(w.sunpct)); tipRow(tip, "Size", w.size.toFixed(2) + "×");
+    if (w.trig != null) tipRow(tip, "Hedge", (w.dir === "down" ? "short " : "long ") + "at " + hh(w.trig));
+    tipRow(tip, "Below high", pc(dd[i]));
+    tip.hidden = false; placeTip(tip, host, cx, py);
+  };
+  const idxAt = e => { const b = host.getBoundingClientRect(); return Math.round((e.clientX - b.left - L) / (W - L - R) * (n - 1)); };
+  hit.addEventListener("pointermove", e => { const b = host.getBoundingClientRect(); show(idxAt(e), e.clientY - b.top); });
+  hit.addEventListener("pointerleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); dots.forEach(d => d.setAttribute("visibility", "hidden")); });
+  hit.addEventListener("click", e => openWeek(Math.max(0, Math.min(n - 1, idxAt(e))), true));
+  hit.style.cursor = "pointer";
+  hit.addEventListener("focus", () => show(ci, 60));
+  hit.addEventListener("keydown", e => { if (e.key === "ArrowLeft") { show(ci - 1, 60); e.preventDefault(); } if (e.key === "ArrowRight") { show(ci + 1, 60); e.preventDefault(); } if (e.key === "Enter") openWeek(ci, true); });
+  hit.addEventListener("blur", () => { tip.hidden = true; });
+}
+
+/* ---------- tables: yearly, monthly, sources ---------- */
+(function yearTable() {
+  const mx = Math.max(...D.yearly.map(y => Math.abs(y.ret)));
+  let h = "<thead><tr><th>Year</th><th>Return</th><th>Weekends</th><th>Won</th><th>Saturday P&amp;L</th><th>of which hedge</th><th>Sunday P&amp;L</th><th>Hedges</th><th>Recovery active</th><th>Account at year end</th></tr></thead><tbody>";
+  D.yearly.forEach(y => {
+    const hn = WK.filter(w => w.sat.startsWith(String(y.year))).reduce((a, w) => a + w.hnet, 0);
+    h += `<tr><th scope="row">${y.year}${y.year === 2021 ? " <span class='muted'>(from 27 Mar)</span>" : y.year === 2026 ? " <span class='muted'>(YTD)</span>" : ""}</th>` +
+      `<td class="${tone(y.ret)}">${fp(y.ret)}<span class="bar-cell" style="width:${Math.round(Math.abs(y.ret) / mx * 60)}px;background:${y.ret >= 0 ? "var(--s1)" : "var(--neg)"}"></span></td>` +
+      `<td>${y.n}</td><td>${Math.round(y.win * 100)}%</td><td class="${tone(y.sat)}">${sUsd(y.sat)}</td><td class="${tone(hn)}">${sUsd(hn)}</td><td class="${tone(y.sun)}">${sUsd(y.sun)}</td><td>${y.trig}</td><td>${Math.round(y.rec * 100)}%</td><td>${usd(y.end)}</td></tr>`;
+  });
+  document.getElementById("yeartable").innerHTML = h + "</tbody>";
+})();
+(function monthTable() {
+  const ys = Object.keys(D.monthly).sort();
+  const all = ys.flatMap(y => Object.values(D.monthly[y]));
+  const mx = Math.max(...all.map(Math.abs));
+  let h = "<thead><tr><th>Year</th>" + MON.map(m => `<th>${m}</th>`).join("") + "<th>Year</th></tr></thead><tbody>";
+  ys.forEach(y => {
+    h += `<tr><th scope="row">${y}</th>`;
+    for (let m = 1; m <= 12; m++) {
+      const v = D.monthly[y][m];
+      if (v === undefined) { h += "<td></td>"; continue; }
+      h += `<td class="hm" data-tone="${v < 0 ? "n" : "p"}" style="--a:${(Math.abs(v) / mx).toFixed(2)}">${fp(v, 1)}</td>`;
+    }
+    const yv = yr[+y] ? yr[+y].ret : null;
+    h += `<td class="${tone(yv)}"><strong>${fp(yv)}</strong></td></tr>`;
+  });
+  document.getElementById("monthtable").innerHTML = h + "</tbody>";
+})();
+(function srcTable() {
+  const satPrem = WK.reduce((a, w) => a + w.prem, 0), satPay = WK.reduce((a, w) => a + w.payout, 0);
+  const sunCost = sunW.reduce((a, w) => a + w.sun_cost, 0), sunPay = sunW.reduce((a, w) => a + w.sun_payout, 0);
+  const rows = [
+    ["Saturday premium received", sUsd(satPrem)], ["Saturday payouts", sUsd(-satPay)], ["Saturday hedge (net)", sUsd(hedgeNet)],
+    ["<strong>Saturday total</strong>", "<strong>" + sUsd(S.sat_total) + "</strong>"],
+    ["Sunday premium paid", sUsd(-sunCost)], ["Sunday payouts received", sUsd(sunPay)],
+    ["<strong>Sunday total</strong>", "<strong>" + sUsd(S.sun_total) + "</strong>"],
+    ["<strong>Profit</strong>", "<strong>" + sUsd(S.final - S.cap) + "</strong>"],
+  ];
+  document.getElementById("srctable").innerHTML = "<tbody>" + rows.map(r => `<tr><th scope="row">${r[0]}</th><td>${r[1]}</td></tr>`).join("") + "</tbody>";
+})();
+function drawHist() {
+  const host = document.getElementById("histchart"); clear(host);
+  const lo = -10, hi = 18, bins = new Array(hi - lo).fill(0), members = bins.map(() => []);
+  WK.forEach(w => { const b = Math.max(0, Math.min(hi - lo - 1, Math.floor(w.wkpct) - lo)); bins[b]++; members[b].push(w); });
+  const W = host.clientWidth, L = 32, R = 8, T = 10, B = 28, h = 200, max = Math.max(...bins);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${h}`, width: W, height: h }, host);
+  const bw = (W - L - R) / bins.length, y = v => T + (1 - v / max) * (h - T - B);
+  const step = max > 60 ? 20 : 10;
+  for (let v = 0; v <= max; v += step) { svgEl("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--rule)", "stroke-width": 1 }, svg); const t = svgEl("text", { x: L - 5, y: y(v) + 4, "text-anchor": "end" }, svg); t.textContent = v; }
+  const tip = makeTip(host);
+  bins.forEach((v, i) => {
+    const l = lo + i, x = L + i * bw;
+    const r = svgEl("rect", { x: x + 1, y: y(v), width: Math.max(bw - 2, 1), height: Math.max(h - B - y(v), 0), rx: 2, fill: l < 0 ? "var(--neg)" : "var(--s1)", "fill-opacity": 0.8 }, svg);
+    r.addEventListener("pointermove", e => { tipHead(tip, (i === 0 ? "≤ " : "") + fp(l, 0) + " to " + fp(l + 1, 0) + (i === bins.length - 1 ? " or more" : "")); tipRow(tip, "Weekends", String(v)); if (v && v <= 3) members[i].forEach(w => tipRow(tip, w.sat, fp(w.wkpct))); tip.hidden = false; const b = host.getBoundingClientRect(); placeTip(tip, host, e.clientX - b.left, e.clientY - b.top); });
+    r.addEventListener("pointerleave", () => { tip.hidden = true; });
+    if (l % 4 === 0) { const t = svgEl("text", { x: x + bw / 2 - bw / 2, y: h - B + 16, "text-anchor": "middle" }, svg); t.textContent = fp(l, 0); }
+  });
+}
+
+/* ---------- all weekends ---------- */
+(function allTables() {
+  const box = document.getElementById("alltables");
+  const byY = {};
+  WK.forEach(w => { (byY[w.sat.slice(0, 4)] = byY[w.sat.slice(0, 4)] || []).push(w); });
+  let html = "";
+  Object.keys(byY).sort().reverse().forEach((y, k) => {
+    const g = byY[y], yv = yr[+y];
+    html += `<details class="yr"${k === 0 ? " open" : ""}><summary>${y}<span class="sm">${g.length} weekends · ${fp(yv.ret)} · won ${Math.round(yv.win * 100)}%</span></summary><div class="scroll"><table class="log"><thead><tr><th>Sat</th><th>ETH 08:00</th><th>Sat IV</th><th>Size</th><th>Contracts</th><th>Premium</th><th>Sat move</th><th>Max move</th><th>Hedge</th><th>Hedge P&amp;L</th><th>Sat P&amp;L</th><th>Sun IV</th><th>Sun cost</th><th>Sun move</th><th>Sun P&amp;L</th><th>Weekend</th><th>Account</th></tr></thead><tbody>`;
+    g.forEach(w => {
+      const hd = w.trig != null ? `${w.dir === "down" ? "short" : "long"} ${hh(w.trig)} · ${num(Math.abs(w.heth), 0)}` : "–";
+      html += `<tr class="${w.size > 1.001 ? "rec" : ""}"><td><button type="button" data-i="${w.i}">${w.sat}</button></td><td>${usd(w.S0)}</td><td>${w.iv.toFixed(0)}%</td><td>${w.size.toFixed(2)}×</td><td>${num(w.eth, 0)}</td><td>${usd(w.prem)}</td><td>${fp(w.move)}</td><td>${pc(w.maxmove)}</td><td>${hd}</td><td class="${tone(w.hnet)}">${w.trig != null ? sUsd(w.hnet) : "–"}</td><td class="${tone(w.satpnl)}">${sUsd(w.satpnl)}</td>` +
+        (w.has_sun ? `<td>${w.sun_iv.toFixed(0)}%</td><td>${usd(w.sun_cost)}</td><td>${fp(w.sun_move)}</td><td class="${tone(w.sunpnl)}">${sUsd(w.sunpnl)}</td>` : `<td>–</td><td>–</td><td>–</td><td>–</td>`) +
+        `<td class="${tone(w.wk)}"><strong>${fp(w.wkpct)}</strong></td><td>${usd(w.eq2)}</td></tr>`;
+    });
+    html += "</tbody></table></div></details>";
+  });
+  box.innerHTML = html;
+  box.addEventListener("click", e => { const b = e.target.closest("button[data-i]"); if (b) openWeek(+b.dataset.i, true); });
+})();
+
+function drawAll() { drawEdge(); drawHedge(); drawInspect(); drawEquity(); drawHist(); }
+openWeek(cur);
+drawAll();
+let rz, lastW = window.innerWidth; window.addEventListener("resize", () => { if (window.innerWidth === lastW) return; lastW = window.innerWidth; clearTimeout(rz); rz = setTimeout(drawAll, 120); });
+</script>

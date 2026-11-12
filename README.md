@@ -246,3 +246,14 @@ python3 report/build_report.py   # rebuild results/report.html
 ```
 
 Not modelled: taxes, gas, margin calls/liquidation, wstETH discount, exchange risk, intraday moves. Not financial advice.
+
+## Chosen strategy report (`report/build_weekend_report.py`)
+
+A standalone report covering only the chosen version: sell the Saturday ATM straddle (gentle recovery capped at 1.5x, plus a one-time
+3% perp hedge closed at Sun 06:00), and buy the Sunday ATM straddle at 1x. It has the rules with UTC timings, the sizing formulas with
+worked numbers, a trade inspector for every weekend, hedge analysis, equity, drawdown and size charts, yearly and monthly tables,
+sensitivity to fills, and a live checklist.
+
+```
+python3 report/build_weekend_report.py   # -> results/weekend_strategy.html + results/weekend_strategy.json
+```
