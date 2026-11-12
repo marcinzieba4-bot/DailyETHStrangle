@@ -61,6 +61,16 @@ Each week sell a weekly call on 2 ETH; short 2 ETH-PERP only if it expires in th
 * Without a floor the strike follows the price down and you sell into dips (dip to $1,200 and back: −19% vs selling).
   With strike = max(ATM, $2,000): +13% in that path, +15% in a range, but in a 2022-style slide nothing sells (−38%, like holding).
 
+## Yearly ATM calls on 50 ETH that are never sold (`run_annual.py`)
+
+Each year sell a 1-year ATM call on 50 ETH for 26% of spot, cash-settle at expiry, roll.
+
+* Nov 2022 → Nov 2026: +$22.6k vs holding 50 ETH (+22%), but −$62k of cumulative call losses to fund by Nov 2024.
+  At 20% premium: −$7.8k.
+* All 1,000 four-year windows since Feb 2020: beats holding 42% of the time (20% premium: 21%); median −7% of
+  holding value; 2020 starts −83%.
+* Today the longest Deribit call (Sep 2027) pays 19.5% of spot (IV ~54%), so a full year is ~21–22%, not 26%.
+
 ## Layout
 
 ```
@@ -71,6 +81,7 @@ run_all.py         quick-exit variants -> results/results.json
 run_accumulate.py  dip-buying plan     -> results/accumulate.json
 run_range.py       1 ETH/day + floor   -> results/range.json
 run_weekly.py      weekly calls        -> results/weekly.json
+run_annual.py      yearly calls        -> results/annual.json
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
 ```
@@ -83,6 +94,7 @@ python3 run_all.py --refresh     # re-download data + live quotes, then simulate
 python3 run_accumulate.py        # dip-buying plan
 python3 run_range.py             # 1 ETH/day with the 50 wstETH floor
 python3 run_weekly.py            # weekly covered calls, 2 ETH a week
+python3 run_annual.py            # yearly ATM calls on 50 ETH, last 4 years + all 4-year windows
 python3 report/build_report.py   # rebuild results/report.html
 ```
 

@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of %%ASOF%%</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest plan: each week sell a weekly call on 2 ETH, and short 2 ETH-PERP only if that call expires in the money. Those 2 ETH are then sold at the strike; otherwise you keep the premium and nothing is hedged. It is compared with selling today and with keeping the 50 wstETH. Earlier versions (the 1 ETH a day put-and-call plan and the quick exits) are further down.</p>
+  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest idea first: hold 50 ETH untouched and, once a year, sell a 1-year ATM call on 50 ETH for 26% of the price. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>%%ETH%%</b></span>
     <span>Daily ATM IV <b>%%DAILY_IV%%%</b></span>
@@ -138,13 +138,59 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: 2 ETH of weekly calls is a slow exit. With a $2,000 strike floor it becomes a paid sell ladder above $2,000</h2>
+  <h2 id="v-h">Bottom line: the last 4 years were a lucky window for yearly calls</h2>
   <ul>
+    <li><strong>Nov 2022 to today it worked.</strong> Holding 50 ETH went from %%AN_START_PX%% to %%AN_END_PX%% per ETH and ends at %%AN_HODL%%. Selling a 1-year ATM call every November for 26% ends at %%AN_FINAL%%, which is %%AN_DIFF%% (%%AN_DIFF_PCT%%) more. On your 62.45 ETH that is about %%AN_SCALE_DIFF%%.</li>
+    <li><strong>But it was underwater for three years.</strong> The first two years ETH rallied past the strike. By Nov 2024 you had paid %%AN_MINCASH%% more in call losses than you had collected. The last two years (flat, then down) paid it all back. With Deribit's ETH-settled options your balance would have dropped to %%AN_ETH_MIN%% ETH before recovering to %%AN_ETH_FINAL%%.</li>
+    <li><strong>Over every 4-year window since 2020 it beat holding only %%AN_BEAT%% of the time.</strong> The median was %%AN_MED%% of the holding value. Windows starting in 2020 lost %%AN_2020%%, because one big bull year wipes out years of premium; 2022 starts gained %%AN_2022%%.</li>
+    <li><strong>26% is generous today.</strong> Deribit's longest call (Sep 2027) pays 19.5% of spot at 54% vol, so a full year is about 21–22%. At 20% the last 4 years end %%AN20_DIFF%% against holding, and only %%AN20_BEAT%% of 4-year windows beat holding.</li>
+    <li><strong>Weekly calls on 2 ETH are too slow to exit</strong> unless the strike never goes below $2,000 and the size is larger. Details below.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="an-h">
+  <h2 id="an-h">Yearly calls on 50 ETH, ETH never sold</h2>
+  <p>Every November, sell a 1-year ATM call on 50 ETH and receive 26% of the price in USD, less a 0.03% fee. At expiry, pay 50 × (price − strike) if ETH finished above the strike, then sell the next call. The 50 ETH are never sold; staking is the same as for holding, so it is left out. The running cash column shows what you would have to fund from elsewhere to keep the ETH untouched.</p>
+  <h3>The last 4 years, year by year (26% premium)</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Year</th><th scope="col">Strike (ETH at sale)</th><th scope="col">ETH at expiry</th><th scope="col">Premium in</th><th scope="col">Paid out</th><th scope="col">Net for the year</th><th scope="col">Running cash</th><th scope="col">ETH-settled balance</th></tr></thead>
+      <tbody>
+%%AN_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Holding: %%AN_HODL%%. With yearly calls: %%AN_FINAL%% (%%AN_DIFF%%). With ETH-settled options and the premium kept in ETH: %%AN_ETH_FINAL%% ETH, worth %%AN_ETH_VAL%%. With a 20% premium instead of 26%: %%AN20_DIFF%% (%%AN20_DIFF_PCT%%).</p>
+
+  <h3>Every 4-year window since February 2020</h3>
+  <p>The same rule started on each of %%AN_N%% days from Feb 2020 to Nov 2022, with four yearly calls each. Results are the gain or loss against holding, as % of the holding value at the end.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Premium</th><th scope="col">Beats holding</th><th scope="col">Median</th><th scope="col">Worst 10%</th><th scope="col">Best 10%</th><th scope="col">Median by start year: 2020 / 2021 / 2022</th><th scope="col">ETH-settled version beats holding</th></tr></thead>
+      <tbody>
+%%AN_WIN_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="legend" aria-hidden="true">
+      <span><i class="key-line" style="background:var(--ink-2)"></i>ETH price at start</span>
+      <span><i class="key-line" style="background:var(--s1)"></i>26% premium</span>
+      <span><i class="key-line" style="background:var(--s2)"></i>20% premium</span>
+    </div>
+    <div class="chart" id="annts" role="img" aria-label="ETH price at start and the 4-year result of yearly calls versus holding, by start date."></div>
+  </div>
+  <p>A yearly ATM call wins every year that ETH ends below the strike plus the premium, and loses everything above that. Since 2020 the call finished in the money in 3 of 4 years for %%AN_ITM3%% of start dates. ETH's big years (2020–21, 2023–24) are far larger than 26%, so the losses come in a few large years and the gains in many small ones. Keeping the ETH untouched also means funding the losses in cash: the median window needed cash equal to %%AN_CASH_MED%% of the starting ETH value at its worst point.</p>
+</section>
+
+<section aria-labelledby="wk-intro">
+  <h2 id="wk-intro">Weekly calls: summary</h2>
+  <ul class="steps" style="list-style:disc">
     <li><strong>It is slow.</strong> With ATM strikes you are fully out after about %%WK_ATM_WEEKS%% weeks (median). With +5% strikes only %%WK_5_OUT2%% of paths are out within two years, and with +10% strikes you still hold about %%WK_10_LEFT%% ETH after two years. Until then you are long the unsold ETH, so the result mostly follows the ETH price.</li>
-    <li><strong>The premium improves your sale price; it is not income.</strong> Since 2021, weekly calls paid back almost exactly what they collected: %%WK_E0%% of premium at ATM, %%WK_E5%% at +5%, %%WK_E10%% at +10%, after spread and fees. Over a full ATM exit you collect about %%WK_ATM_PREM%% and keep %%WK_ATM_EDGE%%.</li>
-    <li><strong>Without a floor you sell into dips.</strong> The strike follows the price down, so in a fall you sell cheap. If ETH dips to about $1,200 and comes back to $2,000, ATM calls end %%WK_DIP_ATM%% against selling today.</li>
-    <li><strong>A $2,000 strike floor fixes that.</strong> Use strike = the higher of ATM (or +5%) and $2,000, so you never sell below $2,000. The same dip then ends %%WK_DIP_FLOOR%% (2 ETH a week) or %%WK_DIP_FLOOR5%% (5 ETH a week at +5%). A range around $2,000 gives %%WK_RG_FLOOR%% and %%WK_RG_FLOOR5%%.</li>
-    <li><strong>The cost is that you may not get out.</strong> In a 2022-style slide nothing sells: you end %%WK_22%% against selling today, about the same as holding (%%WK_22_HODL%%), with %%WK_22_LEFT%% ETH left. If you need to be out for certain, sell today.</li>
+        <li><strong>The premium improves your sale price; it is not income.</strong> Since 2021, weekly calls paid back almost exactly what they collected: %%WK_E0%% of premium at ATM, %%WK_E5%% at +5%, %%WK_E10%% at +10%, after spread and fees. Over a full ATM exit you collect about %%WK_ATM_PREM%% and keep %%WK_ATM_EDGE%%.</li>
+        <li><strong>Without a floor you sell into dips.</strong> The strike follows the price down, so in a fall you sell cheap. If ETH dips to about $1,200 and comes back to $2,000, ATM calls end %%WK_DIP_ATM%% against selling today.</li>
+        <li><strong>A $2,000 strike floor fixes that.</strong> Use strike = the higher of ATM (or +5%) and $2,000, so you never sell below $2,000. The same dip then ends %%WK_DIP_FLOOR%% (2 ETH a week) or %%WK_DIP_FLOOR5%% (5 ETH a week at +5%). A range around $2,000 gives %%WK_RG_FLOOR%% and %%WK_RG_FLOOR5%%.</li>
+        <li><strong>The cost is that you may not get out.</strong> In a 2022-style slide nothing sells: you end %%WK_22%% against selling today, about the same as holding (%%WK_22_HODL%%), with %%WK_22_LEFT%% ETH left. If you need to be out for certain, sell today.</li>
   </ul>
 </section>
 
@@ -701,7 +747,20 @@ function drawRangeTS() {
     tipRow(tip, "Keeping 50 wstETH vs selling", fp(S.hodl[i], 0));
   });
 }
-function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); }
+function drawAnnTS() {
+  const S = D.ann;
+  drawTS("annts", S, [
+    pricePanel(),
+    { key: "d26", title: "26% premium: 4-year result vs holding, % of holding value", h: 150, dom: [-150, 100], ticks: [-150, -100, -50, 0, 50, 100], fmt: pctFmt, color: "var(--s1)" },
+    { key: "d20", title: "20% premium: 4-year result vs holding, % of holding value", h: 150, dom: [-150, 100], ticks: [-150, -100, -50, 0, 50, 100], fmt: pctFmt, color: "var(--s2)" },
+  ], (tip, i) => {
+    tipRow(tip, "ETH 4 years later", "$" + Math.round(S.send[i]).toLocaleString("en-US"));
+    tipRow(tip, "26% premium", fp(S.d26[i], 0), "var(--s1)");
+    tipRow(tip, "20% premium", fp(S.d20[i], 0), "var(--s2)");
+    tipRow(tip, "Years in the money", String(S.itm[i]) + " of 4");
+  });
+}
+function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); }
 drawAll();
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 120); });
 </script>

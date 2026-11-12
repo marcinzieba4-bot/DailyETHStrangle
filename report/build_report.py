@@ -548,12 +548,60 @@ V["WK_E10"] = f"{ce0['0.1']['edge_pct_of_premium']:+.1f}%"
 V["WK_H2_FLOOR"] = pct(WK["hist"]["104"]["2 ETH/wk, ATM, strike ≥ $2,000"]["median"], 0)
 V["WK_H2_HODL"] = pct(WK["hist"]["104"]["hodl"]["median"], 0)
 
+# ---- version 5: yearly ATM calls on 50 ETH that are never sold ----
+AN = json.load(open(os.path.join(ROOT, "results", "annual.json")))
+L4 = AN["last4"]
+yr_rows = []
+for d0, d1, r in zip(L4["dates"][:-1], L4["dates"][1:], L4["0.26"]["rows"]):
+    yr_rows.append(f"<tr><th scope='row'>{pd.Timestamp(d0).strftime('%b %Y')} → {pd.Timestamp(d1).strftime('%b %Y')}</th>"
+                   f"<td>{px(r['strike'])}</td><td>{px(r['expiry_price'])}</td><td class='pos'>{usd(r['premium'], True)}</td>"
+                   f"<td class='{'neg' if r['payout'] > 0 else ''}'>{usd(-r['payout'], True) if r['payout'] > 0 else '$0'}</td>"
+                   f"<td class='{'pos' if r['net'] > 0 else 'neg'}'><strong>{usd(r['net'], True)}</strong></td>"
+                   f"<td class='{'pos' if r['cash'] > 0 else 'neg'}'>{usd(r['cash'], True)}</td><td>{r['eth_balance']:.1f}</td></tr>")
+V["AN_ROWS"] = "\n".join(yr_rows)
+t26, t20 = L4["0.26"]["total"], L4["0.2"]["total"]
+V["AN_HODL"] = usd(t26["hodl"])
+V["AN_FINAL"] = usd(t26["final"])
+V["AN_DIFF"] = usd(t26["diff"], True)
+V["AN_DIFF_PCT"] = pct(t26["diff"] / t26["hodl"] * 100, 0)
+V["AN_MINCASH"] = usd(t26["min_cash"])
+V["AN_ETH_FINAL"] = f"{t26['eth_final']:.1f}"
+V["AN_ETH_VAL"] = usd(t26["eth_final_value"])
+V["AN_ETH_MIN"] = f"{min(r['eth_balance'] for r in L4['0.26']['rows']):.1f}"
+V["AN20_DIFF"] = usd(t20["diff"], True)
+V["AN20_DIFF_PCT"] = pct(t20["diff"] / t20["hodl"] * 100, 0)
+V["AN_START_PX"] = px(L4["prices"][0])
+V["AN_END_PX"] = px(L4["prices"][-1])
+V["AN_SCALE_DIFF"] = usd(t26["diff"] * Q0 / 50, True)
+wr = []
+for key, lab in [("0.26", "26% premium"), ("0.2", "20% premium")]:
+    w = AN["windows"][key]
+    by = w["by_start_year"]
+    wr.append(f"<tr><th scope='row'>{lab}</th><td>{w['beat_hodl']*100:.0f}%</td><td>{pct(w['diff_pct_hodl_median'], 0)}</td>"
+              f"<td class='neg'>{pct(w['diff_pct_hodl_p10'], 0)}</td><td>{pct(w['diff_pct_hodl_p90'], 0)}</td>"
+              f"<td>{pct(by.get('2020', 0), 0)} / {pct(by.get('2021', 0), 0)} / {pct(by.get('2022', 0), 0)}</td>"
+              f"<td>{w['eth_beat_hodl']*100:.0f}%</td></tr>")
+V["AN_WIN_ROWS"] = "\n".join(wr)
+w26 = AN["windows"]["0.26"]
+V["AN_N"] = f"{w26['n']:,}"
+V["AN_BEAT"] = f"{w26['beat_hodl']*100:.0f}%"
+V["AN_MED"] = pct(w26["diff_pct_hodl_median"], 0)
+V["AN_P10"] = pct(w26["diff_pct_hodl_p10"], 0)
+V["AN_2020"] = pct(w26["by_start_year"]["2020"], 0)
+V["AN_2022"] = pct(w26["by_start_year"]["2022"], 0)
+V["AN_CASH_MED"] = f"{-w26['min_cash_pct_median']:.0f}%"
+V["AN20_BEAT"] = f"{AN['windows']['0.2']['beat_hodl']*100:.0f}%"
+V["AN_ITM3"] = f"{w26['itm_years_dist'].get('3', w26['itm_years_dist'].get(3, 0))*100:.0f}%"
+
 # ---- chart data ----
 data = dict(
     strip=strip,
     ts=dict(date=ts["date"].tolist(), price=[round(x, 2) for x in ts["price"]],
             A=[round(x, 2) for x in ts["A. Call-only exit"]], B=[round(x, 2) for x in ts["B. Your plan, adds up to 2x"]],
             dA=ts["A. Call-only exit|days"].tolist(), dB=ts["B. Your plan, adds up to 2x|days"].tolist()),
+    ann=dict(date=AN["windows"]["0.26"]["series"]["start"], price=AN["windows"]["0.26"]["series"]["s0"],
+             d26=AN["windows"]["0.26"]["series"]["diff_pct_hodl"], d20=AN["windows"]["0.2"]["series"]["diff_pct_hodl"],
+             itm=AN["windows"]["0.26"]["series"]["itm_years"], send=AN["windows"]["0.26"]["series"]["s_end"]),
     rng=dict(date=RG["hist_ts"]["date"], price=RG["hist_ts"]["price"],
              r1=[round(v * POS / 100 / 1000, 2) for v in RG["hist_ts"][k1 + "|vs_hodl"]],
              r3=[round(v * POS / 100 / 1000, 2) for v in RG["hist_ts"][k3 + "|vs_hodl"]],
