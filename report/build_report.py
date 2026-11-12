@@ -942,6 +942,90 @@ V["LG_2020"] = "; ".join(f"{_short[k]}: " + (f"broke {pd.Timestamp(v_['ruined'])
                          for k, v_ in v20.items())
 V["LG_15"] = pct(LG["variants"]["Buy + size-up (1.5× move), no cap"]["total_pct"], 0)
 
+# ---- version 13: selling daily vol at real prices -> weekend calendar ----
+WL = json.load(open(os.path.join(ROOT, "results", "weekend_legs_stats.json")))
+WV = json.load(open(os.path.join(ROOT, "results", "weekend_vol.json")))
+WS = json.load(open(os.path.join(ROOT, "results", "weekend_vol_simple.json")))
+DV = json.load(open(os.path.join(ROOT, "results", "daily_vol.json")))
+dnames = ["Mon → Tue", "Tue → Wed", "Wed → Thu", "Thu → Fri", "Fri → Sat", "Sat → Sun", "Sun → Mon"]
+yrs_e = sorted({int(y) for r in WL["edge_dow_year"].values() for y in r})
+erows = []
+for k in range(7):
+    row = WL["edge_dow_year"][str(k)]
+    cells = "".join(f"<td class='hm' style='--a:{min(abs(row[str(y)]), 40)/40:.2f}' data-tone='{'p' if row[str(y)] > 0 else 'n'}'>{row[str(y)]:+.0f}%</td>" for y in yrs_e)
+    allv = WL["edge_dow_all"][str(k)]
+    erows.append(f"<tr><th scope='row'>{dnames[k]}</th>{cells}<td class='hm' style='--a:{min(abs(allv), 40)/40:.2f}' data-tone='{'p' if allv > 0 else 'n'}'><strong>{allv:+.0f}%</strong></td></tr>")
+ally = WL["edge_year_all"]
+erows.append("<tr><th scope='row'><strong>All days</strong></th>" + "".join(f"<td><strong>{ally[str(y)]:+.0f}%</strong></td>" for y in yrs_e) + "<td></td></tr>")
+V["WE_HEAD"] = "".join(f"<th scope='col'>{y}{' YTD' if y == yrs_e[-1] else ''}</th>" for y in yrs_e) + "<th scope='col'>All years</th>"
+V["WE_ROWS"] = "\n".join(erows)
+V["WE_RATIO"] = f"{WL['real_vs_model']:.2f}"
+V["WE_NDAYS"] = f"{WL['n_days']:,}"
+
+def isoos(rows):
+    out_ = []
+    for x in rows:
+        out_.append(f"<tr><th scope='row'>{html.escape(x['name'])}</th>"
+                    f"<td class='{'pos' if x['IS']['cagr'] > 0 else 'neg'}'>{pct(x['IS']['cagr'], 1)}</td><td class='neg'>{pct(x['IS']['maxdd'], 0)}</td>"
+                    f"<td class='{'pos' if x['OOS']['cagr'] > 0 else 'neg'}'><strong>{pct(x['OOS']['cagr'], 1)}</strong></td><td class='neg'>{pct(x['OOS']['maxdd'], 0)}</td></tr>")
+    return "\n".join(out_)
+st1 = WV["stages"]["1. Which days, which side"]["rows"]
+st2 = WV["stages"]["2. Delta hedging"]["rows"]
+hedge_every = [r for r in DV["steps"]["hedge"] if "'hedge': True" in r[0]]
+best_he = max(hedge_every, key=lambda r: r[1]["cagr"])
+V["WV_LEGS_ROWS"] = isoos(st1)
+V["WV_HEDGE_ROWS"] = isoos(st2)
+V["WV_EVERY_HEDGED"] = pct(best_he[1]["cagr"], 0)
+rec_rows = []
+for lab in ["Simple: sell Sat + buy Sun", "+ recover over 8 Saturdays, cap 1.5x", "+ recover over 4 Saturdays, cap 1.5x", "+ recover over 2 Saturdays, cap 1.5x",
+            "+ recover over 4 Saturdays, cap 2x", "Simple at 0.5x each leg", "Simple at 1.5x each leg", "Simple at 2x each leg"]:
+    r = WS[lab]
+    f_ = r["full"]
+    rec_rows.append(f"<tr><th scope='row'>{html.escape(lab.replace('1.5x', '1.5×').replace('2x', '2×').replace('0.5x', '0.5×'))}</th>"
+                    f"<td>{pct(r['IS']['cagr'], 0)} / {pct(r['IS']['maxdd'], 0)}</td><td><strong>{pct(r['OOS']['cagr'], 0)}</strong> / {pct(r['OOS']['maxdd'], 0)}</td>"
+                    f"<td>{pct(f_['cagr'], 1)}</td><td class='neg'>{pct(f_['maxdd'], 0)}</td><td class='neg'>{pct(f_['worst_day'], 1)}</td>"
+                    + "".join(f"<td class='{'pos' if f_['yearly'][str(y)] > 0.5 else ('neg' if f_['yearly'][str(y)] < -0.5 else '')}'>{pct(f_['yearly'][str(y)], 0)}</td>" for y in yrs_e) + "</tr>")
+V["WV_REC_HEAD"] = "".join(f"<th scope='col'>{y}{' YTD' if y == yrs_e[-1] else ''}</th>" for y in yrs_e)
+V["WV_REC_ROWS"] = "\n".join(rec_rows)
+lg_ = WL
+V["WS_SAT_T"] = f"{lg_['Saturday sell']['t']:.1f}"
+V["WS_SUN_T"] = f"{lg_['Sunday buy']['t']:.1f}"
+V["WS_SAT_MEAN"] = f"{lg_['Saturday sell']['mean']:+.2f}%"
+V["WS_SUN_MEAN"] = f"{lg_['Sunday buy']['mean']:+.2f}%"
+V["WS_SAT_WIN"] = f"{lg_['Saturday sell']['win']*100:.0f}%"
+V["WS_SUN_WIN"] = f"{lg_['Sunday buy']['win']*100:.0f}%"
+V["WS_SAT_TOP"] = f"{lg_['Saturday sell']['top10_share']*100:.0f}%"
+V["WS_SUN_TOP"] = f"{lg_['Sunday buy']['top10_share']*100:.0f}%"
+V["WS_SAT_WORST"] = f"{lg_['Saturday sell']['worst']:+.1f}%"
+V["WS_SUN_BEST"] = f"{lg_['Sunday buy']['best']:+.1f}%"
+V["WS_WK_WIN"] = f"{lg_['weekends']['win']*100:.0f}%"
+V["WS_WK_WORST"] = f"{lg_['weekends']['worst']:+.1f}%"
+V["WS_CORR"] = f"{lg_['weekends']['corr']:+.2f}"
+sm = WS["Simple: sell Sat + buy Sun"]
+V["WS_FULL"] = pct(sm["full"]["cagr"], 0)
+V["WS_DD"] = pct(sm["full"]["maxdd"], 0)
+V["WS_OOS"] = pct(sm["OOS"]["cagr"], 0)
+V["WS_OOS_DD"] = pct(sm["OOS"]["maxdd"], 0)
+V["WS_IS"] = pct(sm["IS"]["cagr"], 0)
+r8 = WS["+ recover over 8 Saturdays, cap 1.5x"]
+V["WS_R8"] = pct(r8["full"]["cagr"], 0)
+V["WS_R8_DD"] = pct(r8["full"]["maxdd"], 0)
+V["WS_R8_OOS"] = pct(r8["OOS"]["cagr"], 0)
+V["WS_R8_OOS_DD"] = pct(r8["OOS"]["maxdd"], 0)
+V["WS_2026"] = pct(sm["full"]["yearly"][str(yrs_e[-1])], 0)
+bt = WV["bootstrap"]
+V["WS_BOOT"] = pct(bt["Sell Sat + buy Sun"]["cagr_median"], 0)
+V["WS_BOOT_P5"] = pct(bt["Sell Sat + buy Sun"]["cagr_p5"], 0)
+V["WS_BOOT_LOSS"] = f"{bt['Sell Sat + buy Sun']['loss_2y']*100:.0f}%"
+V["WS_BOOT_DD"] = pct(bt["Sell Sat + buy Sun"]["dd_median"], 0)
+V["WS_BOOT_DD5"] = pct(bt["Sell Sat + buy Sun"]["dd_p5"], 0)
+V["WS_BOOT_EVERY"] = pct(bt["Sell every day (for contrast)"]["cagr_median"], 0)
+V["WS_SENS"] = "".join(f"<tr><th scope='row'>{html.escape(k)}</th><td>{pct(v['cagr'], 1)}</td><td class='neg'>{pct(v['maxdd'], 0)}</td><td>{v['sharpe']:.2f}</td></tr>"
+                       for k, v in WS["sens_simple"].items())
+V["WS_EVERY"] = pct(WS and [x for x in st1 if x["name"] == "Sell every day"][0]["OOS"]["cagr"], 0)
+V["WS_EVERY_IS"] = pct([x for x in st1 if x["name"] == "Sell every day"][0]["IS"]["cagr"], 0)
+V["LG_PAY_TEXT"] = f"{LG['edge']['payback_ratio']*100:.0f}%"
+
 # ---- chart data ----
 data = dict(
     strip=strip,
@@ -956,6 +1040,7 @@ data = dict(
              plain=PU["windows_long"]["0.22|plain"]["series"]["pnl"], A=PU["windows_long"]["0.22|A"]["series"]["pnl"],
              B=PU["windows_long"]["0.22|B"]["series"]["pnl"], dd=PU["windows_long"]["0.22|plain"]["series"]["dd"],
              szB=PU["windows_long"]["0.22|B"]["series"]["max_size"], hodl=PU["windows_long"]["0.22|plain"]["series"]["hodl"]),
+    wk=dict(date=WS["dates"], simple=WS["series_simple"], rec8=WS["series_rec8"]),
     sdl=dict(date=SD["windows"]["0.44|plain"]["series"]["start"], price=SD["windows"]["0.44|plain"]["series"]["s0"],
              plain=SD["windows"]["0.44|plain"]["series"]["pnl"], A=SD["windows"]["0.44|A"]["series"]["pnl"],
              B=SD["windows"]["0.44|B"]["series"]["pnl"], szA=SD["windows"]["0.44|A"]["series"]["max_size"],

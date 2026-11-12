@@ -7,7 +7,7 @@ notional is sized so that a move of `target` x premium recovers L:
     extra = L / ((target - 1) x premium_rate)       target=2 -> a 2x-premium move wins back L
 Wins pay down L; when L reaches 0 the size resets to base ("cycle closed"). Optional cap on total size.
 
-Pricing: daily IV = DVOL (or 1.11 x 30-day realised before Mar 2021) x weekday factor (sim/scenarios.DOW_IV),
+Pricing: real traded IV of the next-day expiry around 08:00 (Deribit history); before Mar 2021 DVOL-proxy x weekday factor,
 Black-Scholes 1-day straddle, bought 3.5% above value, 0.03% fee per leg. Prices: Deribit 08:00 settlements.
 Base notional is fixed in USD (a % of starting capital), so results are additive and easy to read.
 
@@ -32,6 +32,16 @@ FEE = 0.0003
 
 
 def daily_iv(p):
+    """Real traded IV of the next-day expiry at 08:00 (data/daily_atm_iv.csv) where available; model otherwise."""
+    model = daily_iv_model(p)
+    path = os.path.join(ROOT, "data", "daily_atm_iv.csv")
+    if os.path.exists(path):
+        real = pd.read_csv(path, parse_dates=["date"]).set_index("date")["atm_iv"] / 100
+        return real.reindex(p.index).combine_first(model)
+    return model
+
+
+def daily_iv_model(p):
     r = np.log(p).diff()
     rv = r.rolling(30, min_periods=10).std() * np.sqrt(365) * 100
     dv = pd.read_csv(os.path.join(ROOT, "data", "eth_dvol.csv"), parse_dates=["date"]).set_index("date")["dvol"]
@@ -133,7 +143,7 @@ def monte_carlo(n_paths=2000, days=730, base_frac=0.10, seed=11):
     pools = SC.z_pools(hist)
     S = SC.mc_paths(pools, 2009.1, 3, np.full(days, 56.0), np.zeros(days), n_paths, days, seed=seed)
     idx = pd.date_range("2026-11-12", periods=days + 1, freq="D")
-    iv = pd.Series(0.56 * DOW_IV[idx.dayofweek], index=idx)
+    iv = pd.Series(0.56 * 0.866 * DOW_IV[idx.dayofweek], index=idx)   # real traded daily IV ~0.866 x model
     res = {}
     for name, kw in VARIANTS.items():
         finals, ruin_1y, ruin_2y, maxdd = [], 0, 0, []

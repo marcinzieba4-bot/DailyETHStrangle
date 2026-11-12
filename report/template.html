@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of %%ASOF%%</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest question first: buying a daily ATM straddle (put + call) every day, and after losing days sizing up so that a win recovers the accumulated losses, then resetting. Next come the yearly straddle and put ladders with hedging and leverage, and the earlier ideas. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
+  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest question first: a strategy that sells daily ETH volatility, with delta hedging and loss recovery tested. It is built from the real traded prices of Deribit's daily options. Next come buying daily straddles, the yearly straddle and put ladders, and the earlier ideas. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>%%ETH%%</b></span>
     <span>Daily ATM IV <b>%%DAILY_IV%%%</b></span>
@@ -138,14 +138,106 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: buying daily straddles loses steadily, and the recovery size-up turns that into ruin</h2>
+  <h2 id="v-h">Bottom line: selling daily vol only works on Saturdays. Pair it with buying Sunday's straddle</h2>
   <ul>
-    <li><strong>The buyer pays more than ETH moves.</strong> Since Mar 2021 a daily ATM straddle cost %%LG_COST%% of the price at the ask (with fees), and the average daily move was %%LG_MOVE%%. You get back %%LG_PAYBACK%% of what you pay. The move beat the premium on %%LG_WIN%% of days, and beat twice the premium on %%LG_BIG%%.</li>
-    <li><strong>Fixed size, 10% of capital a day: %%LG_FIXED%% since Mar 2021</strong>, losing every year.</li>
-    <li><strong>The size-up rule is a doubling martingale.</strong> To win back a loss with a one-premium profit, you need about 33× that loss in size. After a few bad days the bet reached %%LG_MT_SIZE%% the base and was larger than the cash left by %%LG_MT_BREAK%%. In 2,000 simulated 2-year paths from today the rule breaks within a year in %%LG_MC_UNCAP%% of paths. Capped at 10× it breaks within 2 years in %%LG_MC_CAP10%%, capped at 5× in %%LG_MC_CAP5%%.</li>
-    <li><strong>Best version so far is unchanged:</strong> selling yearly puts with size-up and 4% yield, hedged only below the 200-day average, made +12.5% a year since 2020 with a −21% worst drop.</li>
+    <li><strong>At real traded prices, selling the daily ATM straddle every day lost money in 2022–2026.</strong> Hourly delta hedging, price filters, protective wings and recovery sizing did not fix it (best hedged version: %%WV_EVERY_HEDGED%% a year). Deribit's daily options were priced about %%WE_RATIO%%× my earlier estimate, so ETH moved more than they paid for.</li>
+    <li><strong>One day is the exception, and one day is the mirror image.</strong> Saturday 08:00 → Sunday 08:00 straddles were overpriced: the seller kept about 20% of the premium. Sunday 08:00 → Monday 08:00 straddles were underpriced: the buyer earned about 23%. That window includes the CME futures reopening and Asia's Monday.</li>
+    <li><strong>The strategy is to sell Saturday's straddle and buy Sunday's straddle</strong>, 1× notional each, with no delta hedge. It made %%WS_IS%% a year in 2021–23, where it was chosen, and <strong>%%WS_OOS%% a year in 2024–26</strong>, which it never saw, with a %%WS_OOS_DD%% worst drop. Over the full period: %%WS_FULL%% a year, %%WS_DD%% worst drop. 2026 so far: %%WS_2026%%.</li>
+    <li><strong>Hedging and recovery:</strong> an hourly delta hedge lowered returns on both legs. A gentle recovery rule on the Saturday sell (win back the drawdown over about 8 Saturdays, size capped at 1.5×) made %%WS_R8%% a year with a %%WS_R8_DD%% worst drop: a little more return for a little more risk.</li>
+    <li><strong>Caveats:</strong> about 290 trades per leg (t-stats %%WS_SAT_T%% and %%WS_SUN_T%%), found by looking at every weekday, and the Sunday leg relies on rare big moves. Start at 0.5× notional and scale up only if the pattern continues.</li>
 
     </ul>
+</section>
+
+<section aria-labelledby="wv-h">
+  <h2 id="wv-h">Selling daily volatility: what works at real prices</h2>
+  <p>This section uses the actual implied vol of Deribit's next-day ETH options traded between 08:00 and 09:30 UTC on each of %%WE_NDAYS%% days (Mar 2021 – Nov 2026). Hourly ETH-PERPETUAL prices drive the path within each day. Each component was chosen on 2021–2023 and then tested on 2024–2026, which it never saw. Options are sold or bought 1.5% away from their fair value, with 0.03% fees per leg and 0.03% per perp trade.</p>
+  <h3>Who wins each day: share of the straddle premium the seller kept</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Option window (UTC, 08:00 → 08:00)</th>%%WE_HEAD%%</tr></thead>
+      <tbody>
+%%WE_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Positive means the premium was bigger than ETH's move, so the seller wins; negative means the buyer wins. Before costs. Saturday was positive in 4 of 6 years and Sunday negative in all 6. On every other weekday the market priced daily options slightly below what ETH actually did.</p>
+
+  <h3>Step 1: which days and which side</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Version, 1× notional</th><th scope="col">2021–23 per year</th><th scope="col">Worst drop</th><th scope="col">2024–26 per year (untouched)</th><th scope="col">Worst drop</th></tr></thead>
+      <tbody>
+%%WV_LEGS_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <h3>Step 2: delta hedging</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Sell Sat + buy Sun, hedged with ETH-PERP hourly</th><th scope="col">2021–23 per year</th><th scope="col">Worst drop</th><th scope="col">2024–26 per year</th><th scope="col">Worst drop</th></tr></thead>
+      <tbody>
+%%WV_HEDGE_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>The edge is in the whole day's move compared with the premium. An hourly hedge swaps that for the sum of the hourly swings and adds trading costs, which hurt both legs. Selling every day with the best hourly hedge still lost %%WV_EVERY_HEDGED%% a year in 2021–23. Price filters (trade only when options look rich or cheap against last week's realised vol) and protective wings were also tested. They did not improve the untouched 2024–26 results.</p>
+
+  <h3>Step 3: loss recovery and size</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Version</th><th scope="col">2021–23: per year / worst drop</th><th scope="col">2024–26: per year / worst drop</th><th scope="col">Full period, per year</th><th scope="col">Worst drop</th><th scope="col">Worst day</th>%%WV_REC_HEAD%%</tr></thead>
+      <tbody>
+%%WV_REC_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>The recovery rule raises the Saturday sell size while the account is below its high. The extra size is set so that its premium would win back the drawdown over K Saturdays, with a cap on total size, and it resets at a new high. It added return in 2021–23. In 2024–26 it gave about the same return with a deeper worst drop, so keep it gentle (8 Saturdays, cap 1.5×) or leave it off. Size scales return and drawdown together.</p>
+  <div class="card">
+    <div class="legend" aria-hidden="true">
+      <span><i class="key-line" style="background:var(--s1)"></i>Account value, $100k start</span>
+    </div>
+    <div class="chart" id="wkts" role="img" aria-label="Account value of the weekend calendar, with and without the recovery rule, from 2021."></div>
+  </div>
+
+  <h3>How solid is it?</h3>
+  <div class="two">
+    <div class="scroll card">
+      <table>
+        <thead><tr><th scope="col">Leg (per trade, after costs)</th><th scope="col">Sell Saturday</th><th scope="col">Buy Sunday</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Average, % of notional</th><td>%%WS_SAT_MEAN%%</td><td>%%WS_SUN_MEAN%%</td></tr>
+          <tr><th scope="row">t-statistic (≈290 trades)</th><td>%%WS_SAT_T%%</td><td>%%WS_SUN_T%%</td></tr>
+          <tr><th scope="row">Winning trades</th><td>%%WS_SAT_WIN%%</td><td>%%WS_SUN_WIN%%</td></tr>
+          <tr><th scope="row">Share of profit from the 10 best trades</th><td>%%WS_SAT_TOP%%</td><td>%%WS_SUN_TOP%%</td></tr>
+          <tr><th scope="row">Worst / best trade</th><td>%%WS_SAT_WORST%%</td><td>%%WS_SUN_BEST%%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <p>%%WS_WK_WIN%% of weekends made money; the worst weekend was %%WS_WK_WORST%%. The two legs are slightly opposed (correlation %%WS_CORR%%), so they smooth each other.</p>
+      <p>In 300 two-year resamples of real 10-day blocks, the median was %%WS_BOOT%% a year (worst 5%: %%WS_BOOT_P5%%). %%WS_BOOT_LOSS%% of paths lost money, and the median worst drop was %%WS_BOOT_DD%% (worst 5%: %%WS_BOOT_DD5%%). Selling every day: %%WS_BOOT_EVERY%% a year. Resampling assumes the pattern continues; it does not test whether it will.</p>
+    </div>
+  </div>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Execution and pricing (sell Sat + buy Sun, full period)</th><th scope="col">Per year</th><th scope="col">Worst drop</th><th scope="col">Sharpe</th></tr></thead>
+      <tbody>
+%%WS_SENS%%
+      </tbody>
+    </table>
+  </div>
+
+  <h3>The rules</h3>
+  <ol class="steps">
+    <li><strong>Saturday 08:00 UTC:</strong> sell the ATM straddle (put + call at the strike nearest the price) on the option expiring Sunday 08:00. Size the notional at 0.5–1× your account. Post the order near mark; selling at the bid is still fine (+38% a year at 3% from mark).</li>
+    <li><strong>Sunday 08:00 UTC:</strong> buy the ATM straddle expiring Monday 08:00, same notional. It costs about 2% of notional and loses most weeks; the profit comes from the big Monday moves.</li>
+    <li><strong>No delta hedge.</strong> Let both expire. Keep margin for the short Saturday straddle; a 10% ETH day costs about 8% at 1× notional.</li>
+    <li><strong>Optional recovery:</strong> while the account is below its high, raise the Saturday notional by (drawdown ÷ (8 × premium as % of notional)), at most 1.5× normal. Back to normal at a new high.</li>
+    <li><strong>Don't sell daily vol on other days.</strong> At real prices Monday–Thursday and Sunday lost for the seller.</li>
+    <li><strong>Check it live.</strong> Log every weekend's premium against the move. If after about 6 months the Saturday seller's kept share and the Sunday buyer's gain are both no longer clearly positive, stop.</li>
+  </ol>
+  <p class="note">Earlier sections that used daily options (the quick exits, the 1 ETH a day plans and the first edge table) priced them from DVOL with a weekday factor. Real traded prices were about %%WE_RATIO%%× that estimate, so those sections overstate the seller's edge. Their conclusions against selling daily options only get stronger. The buy-daily-straddle section below now uses real prices.</p>
 </section>
 
 <section aria-labelledby="lg-h">
@@ -170,7 +262,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
       </tbody>
     </table>
   </div>
-  <p>Daily ETH options are priced a little above what ETH actually moves, especially at weekends, and the buyer also pays the spread. That negative edge is about 12% of every premium paid. Sizing up after losses does not change the edge. It makes each bet bigger, so the same small leak empties the account faster, and a run of 4–6 quiet days is enough to need a bet larger than the account. Sellers of these options kept only about 1% of premium after costs (see "Why there is no free lunch here" further down), so neither side of daily straddles has a meaningful edge.</p>
+  <p>At real prices the buyer got back %%LG_PAY_TEXT%% of what they paid after spread and fees, so it is close to break-even with a small loss. Sunday is the exception, as the section above shows. Sizing up after losses does not change the edge. It makes each bet bigger, so the same small leak empties the account faster, and a run of 4–6 quiet days is enough to need a bet larger than the account. Across all days, neither side of daily straddles has a meaningful edge at real prices. The edge is concentrated on the weekend.</p>
 </section>
 
 <section aria-labelledby="sh-h">
@@ -1101,7 +1193,20 @@ function drawLevTS() {
     tipRow(tip, "Cash at 4%", f(S.cash[i]));
   });
 }
-function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); drawSdTS(); drawPuTS(); drawLevTS(); }
+function drawWkTS() {
+  const S = D.wk;
+  S.price = S.simple;
+  const pn = { dom: [0, 900], ticks: [0, 300, 600, 900], fmt: v => "$" + v + "k", h: 130 };
+  drawTS("wkts", S, [
+    Object.assign({ key: "simple", title: "Sell Sat + buy Sun, 1× each", color: "var(--s1)" }, pn),
+    Object.assign({ key: "rec8", title: "Same + recovery over 8 Saturdays, cap 1.5×", color: "var(--s1)" }, pn),
+  ], (tip, i) => {
+    tip.lastChild && tip.removeChild(tip.lastChild);
+    tipRow(tip, "Simple", "$" + S.simple[i].toFixed(0) + "k");
+    tipRow(tip, "With recovery", "$" + S.rec8[i].toFixed(0) + "k");
+  });
+}
+function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); drawSdTS(); drawPuTS(); drawLevTS(); drawWkTS(); }
 drawAll();
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 120); });
 </script>

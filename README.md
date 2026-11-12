@@ -149,6 +149,19 @@ loss; reset when recovered. Real DVOL pricing from Mar 2021, bought at mark + 3.
 * Fixed size: −69% since Mar 2021 (−12…−16%/yr). Size-up: bets reach 100–230× base; the rule breaks (next bet > cash)
   in Aug–Nov 2021. Monte Carlo 2 years from today: breaks within 1 year in 97% (no cap), within 2 years 99% (cap 10×), 70% (cap 5×).
 
+## Selling daily vol at real prices → weekend calendar (`run_daily_vol.py`, `run_daily_vol_select.py`, `run_weekend_vol.py`)
+
+Real implied vol of Deribit's next-day ETH options traded 08:00–09:30 UTC on 2,056 days (`sim/fetch_daily_iv.py`,
+history API) plus hourly ETH-PERP bars. Components chosen on 2021–23, tested on 2024–26, block bootstrap.
+
+* Real daily IV was ~0.87× the DVOL×weekday model used earlier; selling the daily ATM straddle every day lost in 2022–26,
+  and hourly delta hedging, IV filters, wings and recovery did not fix it.
+* Seller kept +21% of premium on Sat 08:00→Sun 08:00 (positive 4 of 6 years); buyer earned +23% on Sun 08:00→Mon 08:00
+  (all 6 years).
+* **Sell Sat straddle + buy Sun straddle, 1× each, no hedge**: 2021–23 +53%/yr, 2024–26 (unseen) +32.5%/yr, full +42%/yr,
+  max DD −18%; robust to costs (+32% at 5% from mark). Optional recovery (8 Saturdays, cap 1.5×): +46%/yr, DD −21%.
+* t-stats ≈2.7–2.8 per leg (~290 trades), Sunday profit concentrated in rare big moves; pattern found by searching weekdays.
+
 ## Layout
 
 ```
@@ -166,6 +179,9 @@ run_puts.py        yearly puts only    -> results/puts.json
 run_leverage.py    puts from 2020, lev -> results/leverage.json
 run_straddle_hedge.py straddles + hedge -> results/straddle_hedge.json
 run_long_straddle.py buy daily straddles -> results/long_straddle.json
+run_daily_vol*.py  daily vol selling   -> results/daily_vol.json
+run_weekend_vol.py weekend calendar    -> results/weekend_vol*.json
+sim/fetch_daily_iv.py  real daily IVs + hourly bars -> data/daily_atm_iv.csv, data/eth_perp_hourly.csv
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
 ```
@@ -185,6 +201,9 @@ python3 run_puts.py              # laddered yearly puts with recovery sizing (20
 python3 run_leverage.py          # continuous put ladder from 2020 with leverage, yearly returns, drawdown
 python3 run_straddle_hedge.py    # straddle ladder + delta hedge from 2020
 python3 run_long_straddle.py     # buy daily straddles with loss-recovery size-up (+ Monte Carlo)
+python3 sim/fetch_daily_iv.py    # download real daily-option IVs + hourly bars (~40 min)
+python3 run_daily_vol_select.py  # selling daily vol every day: staged selection
+python3 run_weekend_vol.py       # weekend calendar: sell Sat, buy Sun
 python3 report/build_report.py   # rebuild results/report.html
 ```
 
