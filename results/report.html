@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of 12 Nov 2026, 13:52 UTC</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is 62.45 ETH at today's on-chain rate of 1.2491. At ETH $2,009.10 that is $125,474. Selling now nets about <strong>$125,411</strong>. This page tests your latest question first: the monthly ladder of 1-year ATM puts with a delta hedge (short ETH perps against the puts' ETH exposure), run from January 2020. Next comes the same ladder unhedged, with yearly returns, maximum drawdown and leverage. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
+  <p class="lede">You hold 50 wstETH, which is 62.45 ETH at today's on-chain rate of 1.2491. At ETH $2,009.10 that is $125,474. Selling now nets about <strong>$125,411</strong>. This page tests your latest question first: a monthly ladder of 1-year ATM straddles (put + call) with a delta hedge, run from January 2020. Next come the put-only ladder with and without hedging, leverage, and the earlier ideas. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>$2,009.10</b></span>
     <span>Daily ATM IV <b>61.0%</b></span>
@@ -138,14 +138,79 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: a full delta hedge removes the return; hedging only in downtrends halves the drawdown</h2>
+  <h2 id="v-h">Bottom line: delta-hedged straddles did not pay on ETH; puts hedged only in downtrends remain the best version</h2>
   <ul>
-    <li><strong>Fully delta-hedged, the put ladder lost money: −3.0% a year since 2020</strong> (worst drop −22%), and it lost from every start date tested. With the ETH exposure hedged away, what is left is premium against ETH's actual moves, and 1-year puts were not priced high enough to win that. The unhedged ladder's profit came from being long ETH, not from a volatility edge.</li>
-    <li><strong>Hedging only while ETH is below its 200-day average works best.</strong> Combined with the size-up rule and 4% on collateral it made +12.5% a year with a −21% worst drop, half the drawdown of the unhedged version (+14.6%, −42%). At 2× notional it made +19.5% with a −43% drop, the same drawdown as unhedged 1× with more return.</li>
-    <li><strong>The trend hedge loses in choppy markets.</strong> Started in March 2024, the hedged version made −0.2% a year (unhedged +6.3%, 2× hedged −5.4%), because the hedge kept switching on and off. The results also move a lot with the moving-average length.</li>
-    <li><strong>Without any hedge (previous question):</strong> 1× + size-up + 4% yield made +14.6% a year with a −42% worst drop; 3× was liquidated in June 2022.</li>
+    <li><strong>From Jan 2020 the hedged straddle ladder was liquidated in April 2021</strong>, and the unhedged one in November 2020. ETH's 10× rally turned short calls sold at $200–1,000 into huge liabilities. The long perp that hedges them paid 30–37% a year in funding (−58% of starting capital in total).</li>
+    <li><strong>ETH moved more than its 1-year options priced in almost every year.</strong> A hedged straddle is a pure bet that options are expensive, and in this pricing they were cheap in every year except 2023. Even a small 0.5× hedged straddle lost −6.8% a year.</li>
+    <li><strong>Started after the 2021 top it is close to flat (−3.5% a year, or +1.4% with size-up and 4% yield), and it hinges on option prices.</strong> If 1-year options were 10 vol points richer than this model, it made +2.9% a year, or +9.2% with size-up and yield, with drawdowns near −12%. Today 1-year implied vol is 54 and ETH realised 58 over the last year, so there is no edge right now.</li>
+    <li><strong>Best version so far: puts with size-up and 4% yield, hedged only below the 200-day average:</strong> +12.5% a year since 2020 with a −21% worst drop.</li>
 
     </ul>
+</section>
+
+<section aria-labelledby="sh-h">
+  <h2 id="sh-h">Calls + puts + delta hedge</h2>
+  <p>Same account and market model as the put sections below, from 1 Jan 2020, compounding. Every month sell a 1-year ATM straddle (a put and a call at today's price) on notional = leverage × equity ÷ 12. The book is delta-hedged with an ETH perpetual: short perp against the puts, long perp against the calls, rebalanced daily when off by more than 2% of the account. The perp pays or receives Deribit's actual funding. Each leg uses Deribit standard margin separately and is bought back once 95% of its premium is earned. Size-up is your rule B, capped at 3×.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Version</th><th scope='col'>2020</th><th scope='col'>2021</th><th scope='col'>2022</th><th scope='col'>2023</th><th scope='col'>2024</th><th scope='col'>2025</th><th scope='col'>2026 YTD</th><th scope="col">Per year</th><th scope="col">Worst drop</th><th scope="col">Liquidated</th><th scope="col">Funding, % of start</th></tr></thead>
+      <tbody>
+<tr><th scope='row'>Straddles 1×, no hedge</th><td class='neg'>−89%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><strong>−27.6%</strong></td><td class='neg'>−90%</td><td>liquidated Nov 2020</td><td class=''>0%</td></tr>
+<tr><th scope='row'>Straddles 1×, delta-hedged daily</th><td class='neg'>−6%</td><td class='neg'>−59%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><strong>−12.8%</strong></td><td class='neg'>−64%</td><td>liquidated Apr 2021</td><td class='neg'>−58%</td></tr>
+<tr><th scope='row'>Straddles 1×, delta-hedged, 10% band</th><td class='neg'>−14%</td><td class='neg'>−59%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><strong>−14.1%</strong></td><td class='neg'>−65%</td><td>liquidated Apr 2021</td><td class='neg'>−52%</td></tr>
+<tr><th scope='row'>Straddles 1× + size-up + 4% yield, delta-hedged</th><td class=''>0%</td><td class='neg'>−35%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><strong>−3.5%</strong></td><td class='neg'>−45%</td><td>liquidated Feb 2021</td><td class='neg'>−29%</td></tr>
+<tr><th scope='row'>Straddles 0.5×, delta-hedged</th><td class='neg'>−4%</td><td class='neg'>−26%</td><td class='neg'>−3%</td><td class='neg'>−1%</td><td class='neg'>−4%</td><td class='neg'>−5%</td><td class=''>0%</td><td><strong>−6.8%</strong></td><td class='neg'>−42%</td><td>no</td><td class='neg'>−41%</td></tr>
+<tr><th scope='row'>Straddles 1.5×, delta-hedged</th><td class='neg'>−11%</td><td class='neg'>−26%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><strong>−5.8%</strong></td><td class='neg'>−40%</td><td>liquidated Jan 2021</td><td class='neg'>−19%</td></tr>
+<tr><th scope='row'>Straddles 1× + size-up + 4% yield, calls hedged, puts hedged below MA</th><td class='pos'>+19%</td><td class='neg'>−44%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><strong>−3.1%</strong></td><td class='neg'>−48%</td><td>liquidated May 2021</td><td class='neg'>−84%</td></tr>
+<tr><th scope='row'>Calls only 1×, delta-hedged</th><td class='neg'>−7%</td><td class='neg'>−56%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><strong>−12.4%</strong></td><td class='neg'>−61%</td><td>liquidated Apr 2021</td><td class='neg'>−59%</td></tr>
+<tr><th scope='row'><em>For comparison: puts only, fully hedged</em></th><td class='neg'>−1%</td><td class='neg'>−2%</td><td class='neg'>−7%</td><td class='pos'>+1%</td><td class='neg'>−2%</td><td class='neg'>−8%</td><td class='neg'>−2%</td><td><strong>−3.0%</strong></td><td class='neg'>−22%</td><td>no</td><td>+2%</td></tr>
+<tr><th scope='row'><em>For comparison: puts + size-up + yield, hedged below MA</em></th><td class='pos'>+24%</td><td class='pos'>+25%</td><td class='neg'>−4%</td><td class='pos'>+41%</td><td class='pos'>+12%</td><td class='neg'>−4%</td><td class='neg'>−1%</td><td><strong>+12.5%</strong></td><td class='neg'>−21%</td><td>no</td><td>−3%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">After a liquidation the account sits in cash (with the 4% yield where that applies), shown as "—" or the yield.</p>
+  <div class="two">
+    <div class="scroll card">
+      <table>
+        <thead><tr><th scope="col">Year</th><th scope="col">1-year implied vol (model)</th><th scope="col">Realised vol</th><th scope="col">Edge for the seller</th></tr></thead>
+        <tbody>
+<tr><th scope='row'>2020</th><td>69%</td><td>86%</td><td class='neg'>-17</td></tr><tr><th scope='row'>2021</th><td>84%</td><td>104%</td><td class='neg'>-20</td></tr><tr><th scope='row'>2022</th><td>72%</td><td>87%</td><td class='neg'>-15</td></tr><tr><th scope='row'>2023</th><td>52%</td><td>46%</td><td class='pos'>+6</td></tr><tr><th scope='row'>2024</th><td>59%</td><td>64%</td><td class='neg'>-5</td></tr><tr><th scope='row'>2025</th><td>61%</td><td>76%</td><td class='neg'>-15</td></tr><tr><th scope='row'>2026</th><td>55%</td><td>56%</td><td class='neg'>-1</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <p>A delta-hedged option seller earns roughly the gap between implied and realised volatility. ETH realised more than the model's 1-year implied vol in every year except 2023. A straddle carries about twice the volatility exposure of a put, so it loses about twice as fast.</p>
+      <p>Hedging the calls has its own cost. In bull markets the hedge is a long perp, and longs pay funding. In late 2020 and early 2021 funding ran at 30–37% a year.</p>
+    </div>
+  </div>
+  <h3>Does it depend on when you start?</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Start date</th><th scope='col'>Straddles 1×, no hedge</th><th scope='col'>Straddles 1×, delta-hedged daily</th><th scope='col'>Straddles 1× + size-up + 4% yield, delta-hedged</th></tr></thead>
+      <tbody>
+<tr><th scope='row'>1 Jan 2021</th><td><span class='neg'>−27.2%/yr</span><span class='sm'>worst drop −84% · liquidated Nov 2021</span></td><td><span class='neg'>−4.9%/yr</span><span class='sm'>worst drop −31%</span></td><td><span class='neg'>−1.0%/yr</span><span class='sm'>worst drop −28%</span></td></tr>
+<tr><th scope='row'>9 Nov 2021 (top)</th><td><span class='neg'>−29.3%/yr</span><span class='sm'>worst drop −87% · liquidated Mar 2024</span></td><td><span class='neg'>−3.5%/yr</span><span class='sm'>worst drop −28%</span></td><td><span class='pos'>+1.4%/yr</span><span class='sm'>worst drop −21%</span></td></tr>
+<tr><th scope='row'>18 Jun 2022 (bottom)</th><td><span class='neg'>−30.2%/yr</span><span class='sm'>worst drop −84% · liquidated Mar 2024</span></td><td><span class='neg'>−2.7%/yr</span><span class='sm'>worst drop −28%</span></td><td><span class='pos'>+1.1%/yr</span><span class='sm'>worst drop −25%</span></td></tr>
+<tr><th scope='row'>12 Mar 2024</th><td><span class='pos'>+14.8%/yr</span><span class='sm'>worst drop −37%</span></td><td><span class='neg'>−5.3%/yr</span><span class='sm'>worst drop −18%</span></td><td><span class='pos'>0.0%/yr</span><span class='sm'>worst drop −10%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>What if 1-year options were richer than this model?</h3>
+  <p>Before 2023 I have no direct 1-year quotes, only a model built from 30-day DVOL, so the same runs were repeated with every option priced 10 and 20 vol points higher.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Start and pricing</th><th scope="col">Straddles 1×, hedged</th><th scope="col">Straddles 1× + size-up + 4% yield, hedged</th><th scope="col">Puts 1×, hedged</th></tr></thead>
+      <tbody>
+<tr><th scope='row'>From Jan 2020, model pricing</th><td><span class='neg'>−12.8%/yr</span><span class='sm'>worst drop −64% · liquidated Apr 2021</span></td><td><span class='neg'>−3.5%/yr</span><span class='sm'>worst drop −45% · liquidated Feb 2021</span></td><td><span class='neg'>−3.0%/yr</span><span class='sm'>worst drop −22%</span></td></tr>
+<tr><th scope='row'>From Jan 2020, options 10 vol points richer</th><td><span class='neg'>−12.8%/yr</span><span class='sm'>worst drop −65% · liquidated Apr 2021</span></td><td><span class='neg'>−7.3%/yr</span><span class='sm'>worst drop −59% · liquidated Apr 2021</span></td><td><span class='pos'>+0.3%/yr</span><span class='sm'>worst drop −13%</span></td></tr>
+<tr><th scope='row'>From Jan 2020, options 20 vol points richer</th><td><span class='neg'>−11.8%/yr</span><span class='sm'>worst drop −63% · liquidated Apr 2021</span></td><td><span class='neg'>−2.5%/yr</span><span class='sm'>worst drop −44% · liquidated Feb 2021</span></td><td><span class='pos'>+3.5%/yr</span><span class='sm'>worst drop −12%</span></td></tr>
+<tr><th scope='row'>From Nov 2021, model pricing</th><td><span class='neg'>−3.5%/yr</span><span class='sm'>worst drop −28%</span></td><td><span class='pos'>+1.4%/yr</span><span class='sm'>worst drop −21%</span></td><td><span class='neg'>−2.1%/yr</span><span class='sm'>worst drop −14%</span></td></tr>
+<tr><th scope='row'>From Nov 2021, options 10 vol points richer</th><td><span class='pos'>+2.9%/yr</span><span class='sm'>worst drop −14%</span></td><td><span class='pos'>+9.2%/yr</span><span class='sm'>worst drop −12%</span></td><td><span class='pos'>+1.0%/yr</span><span class='sm'>worst drop −9%</span></td></tr>
+<tr><th scope='row'>From Nov 2021, options 20 vol points richer</th><td><span class='pos'>+9.5%/yr</span><span class='sm'>worst drop −13%</span></td><td><span class='pos'>+16.4%/yr</span><span class='sm'>worst drop −12%</span></td><td><span class='pos'>+4.4%/yr</span><span class='sm'>worst drop −8%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Starting in 2020, the straddle is liquidated in early 2021 whatever the pricing; the rally breaks it through margin and funding, not through premium. Starting after the 2021 top, richer options would have made the hedged straddle a steady earner with drawdowns around −12%. So the strategy needs two conditions, checked before each sale: 1-year implied clearly above recent realised volatility, and a plan for the calls if ETH runs, such as capping the call size or buying far out-of-the-money calls back.</p>
 </section>
 
 <section aria-labelledby="hg-h">

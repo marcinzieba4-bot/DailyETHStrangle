@@ -850,6 +850,58 @@ V["HG_24"] = pct(HS["2024-03-12"]["1× trend-hedged + size-up + yield"]["cagr"],
 V["HG_24_UN"] = pct(HS["2024-03-12"]["1× + size-up + yield (unhedged)"]["cagr"], 1)
 V["HG_24_2X"] = pct(HS["2024-03-12"]["2× trend-hedged + size-up + yield"]["cagr"], 1)
 
+# ---- version 11: calls + puts + delta hedge ----
+SH = json.load(open(os.path.join(ROOT, "results", "straddle_hedge.json")))
+SB = json.load(open(os.path.join(ROOT, "results", "straddle_hedge_ivbump.json")))
+shrows = []
+for k, v in SH["variants"].items():
+    liq = v.get("liquidated")
+    cells = []
+    for y in years:
+        val = v["yearly"].get(str(y), 0)
+        if liq and y > pd.Timestamp(liq).year:
+            cells.append("<td>—</td>")
+        else:
+            cells.append(f"<td class='{'pos' if val > 0.5 else ('neg' if val < -0.5 else '')}'>{pct(val, 0)}</td>")
+    shrows.append(f"<tr><th scope='row'>{html.escape(k)}</th>{''.join(cells)}<td><strong>{pct(v['cagr'], 1)}</strong></td>"
+                  f"<td class='neg'>{pct(v['maxdd'], 0)}</td><td>{'liquidated ' + pd.Timestamp(liq).strftime('%b %Y') if liq else 'no'}</td>"
+                  f"<td class='{'neg' if v['funding'] < -0.5 else ''}'>{pct(v['funding'], 0)}</td></tr>")
+for k, lab in [("Puts 1×, delta-hedged daily", "For comparison: puts only, fully hedged"),
+               ("Puts 1× + size-up + 4% yield, hedged below 200-day MA", "For comparison: puts + size-up + yield, hedged below MA")]:
+    v = LV["variants"][k]
+    cells = "".join(f"<td class='{'pos' if v['yearly'].get(str(y), 0) > 0.5 else ('neg' if v['yearly'].get(str(y), 0) < -0.5 else '')}'>{pct(v['yearly'].get(str(y), 0), 0)}</td>" for y in years)
+    shrows.append(f"<tr><th scope='row'><em>{lab}</em></th>{cells}<td><strong>{pct(v['cagr'], 1)}</strong></td><td class='neg'>{pct(v['maxdd'], 0)}</td><td>no</td><td>{pct(v.get('funding_pct', 0), 0)}</td></tr>")
+V["SH_HEAD"] = "".join(f"<th scope='col'>{y}{' YTD' if y == years[-1] else ''}</th>" for y in years)
+V["SH_ROWS"] = "\n".join(shrows)
+V["RVIV_ROWS"] = "".join(f"<tr><th scope='row'>{y}</th><td>{d['implied']:.0f}%</td><td>{d['realised']:.0f}%</td>"
+                         f"<td class='{'pos' if d['implied'] > d['realised'] else 'neg'}'>{d['implied'] - d['realised']:+.0f}</td></tr>" for y, d in SH["rv_iv"].items())
+st_lab = {"2021-01-01": "1 Jan 2021", "2021-11-09": "9 Nov 2021 (top)", "2022-06-18": "18 Jun 2022 (bottom)", "2024-03-12": "12 Mar 2024"}
+shs = ["Straddles 1×, no hedge", "Straddles 1×, delta-hedged daily", "Straddles 1× + size-up + 4% yield, delta-hedged"]
+V["SHS_HEAD"] = "".join(f"<th scope='col'>{html.escape(k)}</th>" for k in shs)
+V["SHS_ROWS"] = "\n".join(
+    f"<tr><th scope='row'>{st_lab[d_]}</th>" + "".join(
+        f"<td><span class='{'pos' if row[k]['cagr'] > 0 else 'neg'}'>{pct(row[k]['cagr'], 1)}/yr</span><span class='sm'>worst drop {pct(row[k]['maxdd'], 0)}{' · liquidated ' + pd.Timestamp(row[k]['liq']).strftime('%b %Y') if row[k]['liq'] else ''}</span></td>"
+        for k in shs) + "</tr>" for d_, row in SH["starts"].items())
+bump_rows = []
+for key, v in SB.items():
+    st_, bump = key.split("|")
+    lab = ("From Jan 2020" if st_ == "2020-01-01" else "From Nov 2021") + f", options {float(bump)*100:.0f} vol points richer" if float(bump) > 0 else ("From Jan 2020" if st_ == "2020-01-01" else "From Nov 2021") + ", model pricing"
+    def c_(x):
+        return (f"<td><span class='{'pos' if x['cagr'] > 0 else 'neg'}'>{pct(x['cagr'], 1)}/yr</span>"
+                f"<span class='sm'>worst drop {pct(x['maxdd'], 0)}{' · liquidated ' + pd.Timestamp(x['liq']).strftime('%b %Y') if x['liq'] else ''}</span></td>")
+    bump_rows.append(f"<tr><th scope='row'>{lab}</th>{c_(v['straddle'])}{c_(v['straddle_plus'])}{c_(v['puts'])}</tr>")
+V["SB_ROWS"] = "\n".join(bump_rows)
+sh1 = SH["variants"]["Straddles 1×, delta-hedged daily"]
+V["SH1_LIQ"] = pd.Timestamp(sh1["liquidated"]).strftime("%B %Y")
+V["SH1_FUND"] = pct(sh1["funding"], 0)
+V["SH0_LIQ"] = pd.Timestamp(SH["variants"]["Straddles 1×, no hedge"]["liquidated"]).strftime("%B %Y")
+V["SH_TOP"] = pct(SH["starts"]["2021-11-09"]["Straddles 1×, delta-hedged daily"]["cagr"], 1)
+V["SH_TOP_PLUS"] = pct(SH["starts"]["2021-11-09"]["Straddles 1× + size-up + 4% yield, delta-hedged"]["cagr"], 1)
+V["SB_10"] = pct(SB["2021-11-09|0.1"]["straddle"]["cagr"], 1)
+V["SB_10P"] = pct(SB["2021-11-09|0.1"]["straddle_plus"]["cagr"], 1)
+V["SB_20P"] = pct(SB["2021-11-09|0.2"]["straddle_plus"]["cagr"], 1)
+V["SH_05"] = pct(SH["variants"]["Straddles 0.5×, delta-hedged"]["cagr"], 1)
+
 # ---- chart data ----
 data = dict(
     strip=strip,

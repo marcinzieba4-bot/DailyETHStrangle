@@ -130,6 +130,16 @@ puts bought back at 95% profit.
 Full hedging loses from every start date (the 1-year put premium did not beat ETH's realised volatility);
 the trend hedge halves drawdowns but whipsaws in sideways markets (Mar 2024 start: ~0%/yr). `hedge_starts.json`.
 
+## Calls + puts + delta hedge (`run_straddle_hedge.py`)
+
+Monthly ladder of 1-year ATM straddles from Jan 2020, delta-hedged daily with ETH-PERP (real funding), per-leg Deribit margin.
+
+* From Jan 2020: hedged straddles liquidated in Apr 2021 (−64%), unhedged in Nov 2020. The 10× rally inflated the short
+  calls, and the long-perp hedge paid 30–37%/yr funding (−58% of capital). Same with options priced +10/+20 vol points.
+* ETH realised more than the modelled 1-year implied vol in every year except 2023 (e.g. 2021: 104 vs 84).
+* From the Nov 2021 top: −3.5%/yr at model prices; +2.9%/yr (+9.2% with size-up + yield, DD ≈ −12%) if options were 10 vol
+  points richer. Today 1-year IV ≈ 54 vs 1-year realised ≈ 58 → no edge now. `straddle_hedge_ivbump.json`.
+
 ## Layout
 
 ```
@@ -145,6 +155,7 @@ run_ladder.py      monthly ladder      -> results/ladder.json
 run_straddle.py    yearly straddles    -> results/straddle.json
 run_puts.py        yearly puts only    -> results/puts.json
 run_leverage.py    puts from 2020, lev -> results/leverage.json
+run_straddle_hedge.py straddles + hedge -> results/straddle_hedge.json
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
 ```
@@ -162,6 +173,7 @@ python3 run_ladder.py            # monthly ladder of yearly calls
 python3 run_straddle.py          # laddered yearly straddles with recovery sizing
 python3 run_puts.py              # laddered yearly puts with recovery sizing (2017+ windows)
 python3 run_leverage.py          # continuous put ladder from 2020 with leverage, yearly returns, drawdown
+python3 run_straddle_hedge.py    # straddle ladder + delta hedge from 2020
 python3 report/build_report.py   # rebuild results/report.html
 ```
 
