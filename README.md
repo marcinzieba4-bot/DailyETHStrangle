@@ -39,6 +39,18 @@ One-year Monte Carlo regimes plus 1- and 2-year historical windows (2021–2026)
 * The rule sells on every up day regardless of price; selling calls only ≥ $2,000 and capping at 125 ETH fixes
   the "sells the rebound cheaply" problem (history 1-year median +39%, but worst 5% −104%).
 
+## 1 ETH a day with a 50 wstETH floor below $2,000 (`run_range.py`)
+
+Same daily put + call, 1 ETH each. Below the start price (~$2,000) calls are only sold on ETH bought above the
+50 wstETH base, so exposure never drops below it there. Two-year horizon.
+
+* Range around $2,000: +$10.8k over keeping the 50 wstETH (beats holding in 93% of paths); wanders and returns
+  to $2,000: +$20k; real 2-year windows 2021–2024: +$25k average, 94% beat holding.
+* Premium collected ≈ $28k, paid back ≈ $27.7k: option edge ≈ $0.4k. The gain is the range effect (more ETH after
+  drops, less after rises) plus ~$2k of staking/funding.
+* Still long ETH, never fully out in 2 years. 2022-style slide: −40% vs selling, −$5k vs holding.
+  Cash reserve ≈ $35–40k per 1 ETH/day (up to $75–125k in a bad stretch).
+
 ## Layout
 
 ```
@@ -47,6 +59,7 @@ sim/data.py        Deribit settlement prices, DVOL, funding; live snapshot
 sim/scenarios.py   illustrative paths, bootstrap Monte Carlo regimes, historical rolling windows
 run_all.py         quick-exit variants -> results/results.json
 run_accumulate.py  dip-buying plan     -> results/accumulate.json
+run_range.py       1 ETH/day + floor   -> results/range.json
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
 ```
@@ -57,6 +70,7 @@ data/              cached market data (Deribit public API)
 pip install numpy pandas scipy
 python3 run_all.py --refresh     # re-download data + live quotes, then simulate quick exits
 python3 run_accumulate.py        # dip-buying plan
+python3 run_range.py             # 1 ETH/day with the 50 wstETH floor
 python3 report/build_report.py   # rebuild results/report.html
 ```
 

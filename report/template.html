@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of %%ASOF%%</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your plan: sell an ATM daily put and call every day. When the put is assigned, keep the extra wstETH. When the call is assigned, hedge with ETH-PERP. Sell gradually into rallies and let staking pay while you wait. It is compared with selling today, and with simply keeping the 50 wstETH.</p>
+  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your plan: sell a 1 ETH ATM daily put and a 1 ETH ATM call every day. A down day adds 1 ETH of wstETH. An up day hedges 1 ETH with an ETH-PERP short. Below $2,000 the base 50 wstETH is never hedged, so you always hold at least that much there. It is compared with keeping the 50 wstETH and with selling today.</p>
   <div class="facts">
     <span>ETH index <b>%%ETH%%</b></span>
     <span>Daily ATM IV <b>%%DAILY_IV%%%</b></span>
@@ -138,18 +138,76 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: your plan is a leveraged bet on ETH recovering</h2>
+  <h2 id="v-h">Bottom line: it pays if ETH ranges, and the money comes from the range, not the premium</h2>
   <ul>
-    <li><strong>It makes money only if ETH comes back.</strong> Over a year with no view on direction, the options add %%PL_NV_EDGE%% of the position and staking %%PL_NV_STAKE%%. Everything else comes from ETH's price times a position that grows as ETH falls. If your spare cash could earn 4% instead, the no-view result is %%PL_NV_USD4%%.</li>
-    <li><strong>ETH has not mean-reverted.</strong> Since %%MR_SINCE%%, a down day was followed by an up day %%MR_PUP%% of the time, but the size of moves did not reverse, and over 10 to 250 days ETH trended rather than snapped back.</li>
-    <li><strong>History was kind to it, and the tail is deep.</strong> In 1-year windows since March 2021, 6.25 ETH a day beat selling %%PL_H_BEAT%% of the time, with a median of %%PL_H_MED%%. The worst 5% ended at %%PL_H_P5%% or worse. A 2022-style slide ends at %%PL_22_MEAN%% (%%PL_22_USD%%). By then you hold about %%PL_22_ETH%% ETH and have put in %%PL_22_CASH%% of extra cash.</li>
-    <li><strong>The rule sells on every up day, not only above $2,000.</strong> After a dip it sells the rebound at dip prices. Selling calls only at or above $2,000 and capping the position at 125 ETH fixes that. With those changes the 1-year median was %%FIX_H_MED%% in history.</li>
-    <li><strong>If the goal is simply to get out of ETH, sell today.</strong> The quick-exit variants further down show why.</li>
+    <li><strong>Your intuition holds for a range.</strong> If ETH spends two years around $2,000, 1 ETH a day adds about %%R_RANGE%% to just keeping the 50 wstETH, and beats holding in %%R_RANGE_BEAT%% of paths. If ETH wanders and ends back at $2,000, the gain is %%R_WANDER%%. Over real 2-year windows since 2021 it averaged %%R_H2%% and beat holding %%R_H2_BEAT%% of the time.</li>
+    <li><strong>The option premium is not the source.</strong> Over two years you collect about %%R_PREM%% and pay back about %%R_PAY%% on assigned options, leaving %%R_EDGE%%. The gain is the range effect (%%R_GRID%%): you hold more ETH after drops and less after rises, so a return to $2,000 pays you.</li>
+    <li><strong>You stay long ETH.</strong> With 1 ETH a day you are never fully out within two years. With no view on direction, the median result against selling today is %%R_NV_SELL_MED%%, the same kind of risk as holding. A 2022-style slide ends at %%R_22_SELL%% against selling and %%R_22_HODL%% against holding, with about %%R_22_ETH%% ETH in hand.</li>
+    <li><strong>Keep cash ready.</strong> In a range you need about %%R_CASH%% of USD to buy on down days, and up to %%R_CASH95%%. In a strong rally the perp shorts lose cash while the wstETH gains sit elsewhere, up to %%R_BULL_CASH95%%.</li>
+    <li><strong>3 ETH a day scales everything by three.</strong> The range gain becomes %%R3_RANGE%%. So does the tail: with no view, the worst 5% against holding is %%R3_NV_P5%%.</li>
   </ul>
 </section>
 
+<section aria-labelledby="rg-h">
+  <h2 id="rg-h">Your plan: 1 ETH a day, never below 50 wstETH under $2,000</h2>
+  <p>Every day at the 08:00 UTC settlement, sell a 1 ETH ATM put and a 1 ETH ATM call. Down day: the put is assigned and you take 1 ETH, first by closing a perp short, otherwise by buying wstETH that you keep. Up day: the call is assigned and you short 1 ETH-PERP. Below $2,000, calls are only sold against ETH bought above the 50 wstETH base. Above $2,000, the base is hedged too, 1 ETH per up day. Two years, 10,000 paths per scenario, plus every 1- and 2-year window of real Deribit settlements since March 2021.</p>
+  <h3>Two years later</h3>
+  <p>Percent columns are against selling today (%%SELL%%): mean in large type, then median and worst 5%. Dollar columns are what the plan adds on top of keeping the 50 wstETH, over the whole period, with the share of paths where it beats holding.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Scenario</th><th scope="col">Keep 50 wstETH, vs selling</th><th scope="col">Your plan, vs selling</th><th scope="col">1 ETH/day, extra over keeping</th><th scope="col">3 ETH/day, extra over keeping</th></tr></thead>
+      <tbody>
+%%RG_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Whenever ETH comes back to about $2,000, the plan beats holding almost every time: %%R_RANGE%% in a range, %%R_CALM%% in a calm range, %%R_WANDER%% if it wanders and returns, %%R_DIP%% after a dip to about $1,200. With no view on direction it adds %%R_NV%% on average (median %%R_NV_MED%%, worst 5% %%R_NV_P5%%). In a strong rally it trails holding on average (%%R_BULL_MEAN%%, worst 5% %%R_BULL_P5%%), because above $2,000 it hedges the base while ETH keeps climbing.</p>
+
+  <h3>Where the money comes from, 1 ETH a day</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Average over two years</th>%%MONEY_HEAD%%</tr></thead>
+      <tbody>
+%%MONEY_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Each assigned option trades 1 ETH at yesterday's price, so on a down day you buy above the market and on an up day you sell below it. The premium almost exactly pays for that. In a range you make about %%R_ADDED%% buys and %%R_HEDGED%% hedges over two years. The profit comes from the order they happen in: you end up holding extra ETH near the lows and less near the highs, and the return to $2,000 pays you for that. If the price trends away and does not come back, the same effect costs you.</p>
+
+  <h3>Position and cash</h3>
+  <div class="scroll card">
+    <table>
+      <thead>
+        <tr><th scope="col" rowspan="2">Scenario</th><th scope="colgroup" colspan="3" style="text-align:center">1 ETH a day</th><th scope="colgroup" colspan="3" style="text-align:center">3 ETH a day</th></tr>
+        <tr><th scope="col">ETH exposure after 2 years, median / worst 5%</th><th scope="col">Most wstETH held, worst 5%</th><th scope="col">Extra USD needed, median / worst 5%</th><th scope="col">ETH exposure after 2 years, median / worst 5%</th><th scope="col">Most wstETH held, worst 5%</th><th scope="col">Extra USD needed, median / worst 5%</th></tr>
+      </thead>
+      <tbody>
+%%POS_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Exposure starts at 62.45 ETH (50 wstETH). In a range it ends near %%R_ET_MED%% ETH; you are never fully out in two years. "Extra USD needed" is the most cash the plan draws at any point. That covers buying wstETH on down days, and also covering perp losses when ETH rises while the hedges are on. That is why the bull scenario needs cash too.</p>
+
+  <h3>History: what the plan added over keeping 50 wstETH, by start date</h3>
+  <div class="card">
+    <div class="legend" aria-hidden="true">
+      <span><i class="key-line" style="background:var(--ink-2)"></i>ETH price at start</span>
+      <span><i class="key-line" style="background:var(--s1)"></i>1 ETH a day</span>
+      <span><i class="key-line" style="background:var(--s3)"></i>3 ETH a day</span>
+    </div>
+    <div class="chart" id="rngts" role="img" aria-label="ETH price and the two-year gain over keeping 50 wstETH, by start date, for 1 and 3 ETH a day."></div>
+  </div>
+  <p class="note">Each point is a start date; the line is the two-year result minus what keeping the 50 wstETH would have made. It is shown in today's dollars, as if the position were worth %%POS%% at the start. The 2021–2024 sample round-tripped (about $1,800 to $4,800 to $900 and back up), which suits this plan.</p>
+  <p>If daily options are priced 10% richer than assumed, the range gain rises to %%R_IV_RICH%%; 10% cheaper, %%R_IV_CHEAP%%. If the USD you keep ready could earn 4% elsewhere, the range gain is %%R_USD4%%.</p>
+</section>
+
+<section aria-labelledby="exit-alt">
+  <h2 id="exit-alt">Earlier versions</h2>
+  <p>The sections below come from the earlier questions. The first tests bigger daily sizes (2.5 to 15.6 ETH) without the $2,000 floor over one year. The last ones test quick exits.</p>
+</section>
+
 <section aria-labelledby="plan-h">
-  <h2 id="plan-h">Your plan: buy the dips, sell the rallies</h2>
+  <h2 id="plan-h">Bigger daily sizes, no floor</h2>
   <p>Every day, sell an ATM put and an ATM call of the same size. A down day adds that much ETH, and the wstETH is kept with no limit. An up day hedges that much with a perp short; the wstETH stays and keeps staking. You are done when everything is hedged, at which point you sell. Tested with 2.5, 6.25 and 15.6 ETH a day (4%, 10% and 25% of your 62.45 ETH), over one year.</p>
   <h3>One year later, against selling today</h3>
   <p>Mean result in large type, then the median and the worst 5%, all as % of today's %%SELL%%. Results below −100% mean losing more than the position, which can happen because the plan keeps buying ETH.</p>
@@ -387,14 +445,14 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 
 <section aria-labelledby="a-h">
   <h2 id="a-h">How to use this</h2>
-  <h3>If you run the dip-buying plan</h3>
+  <h3>If you run the 1 ETH a day plan</h3>
   <ol class="steps">
-    <li><strong>Treat it as a bullish ETH position, not an exit.</strong> Only run it if you would be comfortable owning twice as much ETH as today at much lower prices.</li>
-    <li><strong>Size the daily lot at about 10% (6 ETH), not the full 62 ETH.</strong> A full-size lot can need millions of dollars in a sell-off. At 6.25 ETH a day, keep %%PL_NV_CASH%% of USD ready, and up to %%PL_NV_CASH95%% in a bad year.</li>
-    <li><strong>Sell calls only at or above $2,000 (or above your average cost).</strong> Without this the rule sells the rebound after every dip.</li>
-    <li><strong>Cap total holdings, for example at 125 ETH, and stop selling puts there.</strong> Decide in advance what you do if ETH falls toward $1,000. Around there the losses approach the size of the whole position.</li>
-    <li><strong>Count the cost of the cash.</strong> USD sitting ready to buy could earn about 4%. At that rate the no-view result drops to %%PL_NV_USD4%%.</li>
-    <li><strong>Execution:</strong> post orders at mid rather than hitting the bid. Hedge exactly at the 08:00 UTC settlement and convert the ETH-paid premium. Keep margin for the perp shorts on the exchange.</li>
+    <li><strong>Treat it as holding ETH with a range-trading overlay, not as an exit.</strong> It pays when ETH keeps coming back to about $2,000 and costs you when ETH trends away.</li>
+    <li><strong>Keep the $2,000 floor.</strong> It stops the plan from selling the rebound after a dip, which was the main flaw of the version without it.</li>
+    <li><strong>Hold USD in reserve: roughly $35–40k per 1 ETH a day of lot size, and up to $75–125k in a bad stretch.</strong> In a 2022-style slide, plan for %%R_22_CASH%% (up to %%R_22_CASH95%%).</li>
+    <li><strong>Keep margin for the perp shorts on the exchange.</strong> In a rally they lose cash every day while your wstETH gains are on-chain.</li>
+    <li><strong>Scale only as far as your cash allows.</strong> 2–3 ETH a day multiplies both the range gain and the tail roughly in proportion.</li>
+    <li><strong>Execution:</strong> post at mid as a maker rather than hitting the bid. Trade at the 08:00 UTC settlement and convert the ETH-paid premium to USD.</li>
   </ol>
   <h3>If you want out</h3>
   <ol class="steps">
@@ -573,7 +631,21 @@ function drawPlanTS() {
   });
 }
 
-function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); }
+function drawRangeTS() {
+  const S = D.rng;
+  const kf = v => (v > 0 ? "+" : v < 0 ? "−" : "") + "$" + Math.abs(v) + "k";
+  drawTS("rngts", S, [
+    pricePanel(),
+    { key: "r1", title: "1 ETH a day: extra over keeping 50 wstETH, 2 years", h: 140, dom: [-70, 90], ticks: [-50, 0, 50], fmt: kf, color: "var(--s1)" },
+    { key: "r3", title: "3 ETH a day: extra over keeping 50 wstETH, 2 years", h: 140, dom: [-160, 180], ticks: [-150, -75, 0, 75, 150], fmt: kf, color: "var(--s3)" },
+  ], (tip, i) => {
+    const f = v => (v >= 0 ? "+" : "−") + "$" + Math.abs(v).toFixed(1) + "k";
+    tipRow(tip, "1 ETH a day", f(S.r1[i]), "var(--s1)");
+    tipRow(tip, "3 ETH a day", f(S.r3[i]), "var(--s3)");
+    tipRow(tip, "Keeping 50 wstETH vs selling", fp(S.hodl[i], 0));
+  });
+}
+function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); }
 drawAll();
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 120); });
 </script>

@@ -64,14 +64,14 @@ def scenarios(P0, T):
                                        desc="Your thesis, strict form: price is pulled back to $2,000 (half-life 60 days).")
     sc["Dip -35%, then recovers to $2,400"] = dict(kind="drift", rv=60, iv=60, fund=0.02,
                                                   mu=np.where(t < 90, np.log(0.65) / 90, np.log(1.2 / 0.65) / (T - 90)),
-                                                  desc="Falls to ~$1,300 over 3 months, ends the year at ~$2,400.")
+                                                  desc="Average path falls to ~$1,300 over 3 months and ends the year at ~$2,400.")
     sc["Bull +80% in a year"] = dict(kind="drift", rv=56, iv=56, mu=np.full(T, np.log(1.8) / T), fund=0.08,
-                                     desc="Steady uptrend to ~$3,600.")
+                                     desc="Average path rises steadily to ~$3,600.")
     sc["2022 replay: -60% in 6 months, then flat"] = dict(kind="drift", rv=70, iv=70, fund=0.0,
                                                           mu=np.where(t < 180, np.log(0.4) / 180, 0.0),
-                                                          desc="Slides to ~$800 and stays there.")
+                                                          desc="Average path slides to ~$800 and stays there.")
     sc["Slow bleed -50% in a year"] = dict(kind="drift", rv=65, iv=65, mu=np.full(T, np.log(0.5) / T), fund=0.0,
-                                           desc="Grinds down to ~$1,000 by year end.")
+                                           desc="Average path grinds down to ~$1,000 by year end.")
     return sc
 
 

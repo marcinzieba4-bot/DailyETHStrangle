@@ -350,12 +350,130 @@ V["FIX_CASH95"] = usd(nvA[fx]["cash_need_p95"])
 V["FIX_EXIT"] = px(nvA[fx]["exit_px_cleared_med"])
 V["FIX_CLR"] = f"{nvA[fx]['cleared']*100:.0f}%"
 
+# ---- version 3: 1 ETH a day, never below 50 wstETH under the start price ----
+RG = json.load(open(os.path.join(ROOT, "results", "range.json")))
+k1, k3 = "1 ETH/day", "3 ETH/day"
+
+
+def kusd(x, sign=True):
+    v = x / 1000
+    s_ = f"${abs(v):,.0f}k" if abs(v) >= 9.5 else f"${abs(v):,.1f}k"
+    return (("+" if x >= 0 else "−") if sign else ("−" if x < 0 else "")) + s_
+
+
+def usd_cell(m, med, p5, beat=None, scale=30000):
+    a = min(abs(m), scale) / scale
+    tone = "p" if m > 0 else "n"
+    extra = f" · beats {beat*100:.0f}%" if beat is not None else ""
+    return (f"<td class='hm' style='--a:{a:.2f}' data-tone='{tone}'><span class='big'>{kusd(m)}</span>"
+            f"<span class='sm'>med {kusd(med)} · 5%: {kusd(p5)}{extra}</span></td>")
+
+
+rg_blocks = [(k, v, v["desc"]) for k, v in RG["mc"].items()]
+rg_blocks += [("History, 1-year windows", RG["hist"]["365"], f"{RG['hist']['365']['n']:,} starts, Mar 2021 – Nov 2025"),
+              ("History, 2-year windows", RG["hist"]["730"], f"{RG['hist']['730']['n']:,} starts, Mar 2021 – Nov 2024")]
+rows = []
+for name, blk, desc in rg_blocks:
+    a1, a3 = blk[k1], blk[k3]
+    rows.append(
+        f"<tr><th scope='row'>{html.escape(name)}<span class='sm'>{html.escape(desc)}</span></th>"
+        + hm_cell(a1["hodl_vs_sell_mean"], a1["hodl_vs_sell_med"], a1["hodl_vs_sell_p5"], 80)
+        + hm_cell(a1["vs_sell_mean"], a1["vs_sell_med"], a1["vs_sell_p5"], 80)
+        + usd_cell(a1["vs_hodl_mean_usd"], a1["vs_hodl_med_usd"], a1["vs_hodl_p5_usd"], a1["beat_hodl"])
+        + usd_cell(a3["vs_hodl_mean_usd"], a3["vs_hodl_med_usd"], a3["vs_hodl_p5_usd"], a3["beat_hodl"], 90000) + "</tr>")
+V["RG_ROWS"] = "\n".join(rows)
+
+money_cols = [("Range around $2,000", RG["mc"]["Range around $2,000"]),
+              ("Wanders, back at $2,000", RG["mc"]["Wanders, back at $2,000 after 2 years"]),
+              ("Dip to ~$1,200, back at $2,000", RG["mc"]["Dips to ~$1,200, back at $2,000"]),
+              ("No view", RG["mc"]["No view (random walk)"]),
+              ("2022 replay", RG["mc"]["2022 replay: −60%, no recovery"]),
+              ("History, 2 years", RG["hist"]["730"])]
+V["MONEY_HEAD"] = "".join(f"<th scope='col'>{html.escape(n)}</th>" for n, _ in money_cols)
+mrows = []
+for lab, key, strong in [("Premium collected", "premium_usd", False), ("Paid out on assigned options", "payout_usd", False),
+                         ("Option edge (premium − payouts)", "edge_usd", True), ("Staking on the extra wstETH", "extra_stake_usd", False),
+                         ("Perp funding received", "funding_usd", False), ("Fees and slippage", "costs_usd", False),
+                         ("Range effect: more ETH after drops, less after rises", "grid_usd", True),
+                         ("Total vs keeping 50 wstETH", "vs_hodl_mean_usd", True)]:
+    cells = []
+    for _, blk in money_cols:
+        v = blk[k1][key]
+        if key == "payout_usd":
+            v = -v
+        cls = "" if key == "premium_usd" or abs(v) < 0.5 else ("pos" if v > 0 else "neg")
+        cells.append(f"<td class='{cls}'>{'<strong>' if strong else ''}{usd(v, True)}{'</strong>' if strong else ''}</td>")
+    mrows.append(f"<tr><th scope='row'>{'<strong>' + lab + '</strong>' if strong else lab}</th>{''.join(cells)}</tr>")
+V["MONEY_ROWS"] = "\n".join(mrows)
+
+prow = []
+for name, blk in [("Range around $2,000", RG["mc"]["Range around $2,000"]), ("No view", RG["mc"]["No view (random walk)"]),
+                  ("Dip to ~$1,200, back at $2,000", RG["mc"]["Dips to ~$1,200, back at $2,000"]),
+                  ("2022 replay", RG["mc"]["2022 replay: −60%, no recovery"]), ("Bull: doubles", RG["mc"]["Bull: doubles in 2 years"]),
+                  ("History, 2 years", RG["hist"]["730"])]:
+    cells = []
+    for k in (k1, k3):
+        x = blk[k]
+        cells.append(f"<td>{x['E_T_med']:.0f} / {x['E_T_p95']:.0f}</td><td>{x['maxW_p95']:.0f}</td>"
+                     f"<td>{kusd(x['cash_med'], False)} / {kusd(x['cash_p95'], False)}</td>")
+    prow.append(f"<tr><th scope='row'>{html.escape(name)}</th>{''.join(cells)}</tr>")
+V["POS_ROWS"] = "\n".join(prow)
+
+rr = RG["mc"]["Range around $2,000"]
+wb = RG["mc"]["Wanders, back at $2,000 after 2 years"]
+nv3 = RG["mc"]["No view (random walk)"]
+r22 = RG["mc"]["2022 replay: −60%, no recovery"]
+bl = RG["mc"]["Bull: doubles in 2 years"]
+h2 = RG["hist"]["730"]
+V["R_RANGE"] = kusd(rr[k1]["vs_hodl_mean_usd"])
+V["R_RANGE_BEAT"] = f"{rr[k1]['beat_hodl']*100:.0f}%"
+V["R_CALM"] = kusd(RG["mc"]["Calm range around $2,000"][k1]["vs_hodl_mean_usd"])
+V["R_WANDER"] = kusd(wb[k1]["vs_hodl_mean_usd"])
+V["R_DIP"] = kusd(RG["mc"]["Dips to ~$1,200, back at $2,000"][k1]["vs_hodl_mean_usd"])
+V["R_H2"] = kusd(h2[k1]["vs_hodl_mean_usd"])
+V["R_H2_MED"] = kusd(h2[k1]["vs_hodl_med_usd"])
+V["R_H2_BEAT"] = f"{h2[k1]['beat_hodl']*100:.0f}%"
+V["R_H2_P5"] = kusd(h2[k1]["vs_hodl_p5_usd"])
+V["R_PREM"] = kusd(rr[k1]["premium_usd"], False)
+V["R_PAY"] = kusd(rr[k1]["payout_usd"], False)
+V["R_EDGE"] = usd(rr[k1]["edge_usd"])
+V["R_GRID"] = kusd(rr[k1]["grid_usd"])
+V["R_ADDED"] = f"{rr[k1]['added_eth_med']:.0f}"
+V["R_HEDGED"] = f"{rr[k1]['hedged_eth_med']:.0f}"
+V["R_CASH"] = kusd(rr[k1]["cash_med"], False)
+V["R_CASH95"] = kusd(rr[k1]["cash_p95"], False)
+V["R_NV"] = kusd(nv3[k1]["vs_hodl_mean_usd"])
+V["R_NV_MED"] = kusd(nv3[k1]["vs_hodl_med_usd"])
+V["R_NV_P5"] = kusd(nv3[k1]["vs_hodl_p5_usd"])
+V["R_NV_SELL_MED"] = pct(nv3[k1]["vs_sell_med"], 0)
+V["R_22_SELL"] = pct(r22[k1]["vs_sell_mean"], 0)
+V["R_22_HODL"] = kusd(r22[k1]["vs_hodl_mean_usd"])
+V["R_22_ETH"] = f"{r22[k1]['E_T_med']:.0f}"
+V["R_22_CASH"] = kusd(r22[k1]["cash_med"], False)
+V["R_22_CASH95"] = kusd(r22[k1]["cash_p95"], False)
+V["R_BULL_MED"] = kusd(bl[k1]["vs_hodl_med_usd"])
+V["R_BULL_MEAN"] = kusd(bl[k1]["vs_hodl_mean_usd"])
+V["R_BULL_P5"] = kusd(bl[k1]["vs_hodl_p5_usd"])
+V["R_BULL_CASH95"] = kusd(bl[k1]["cash_p95"], False)
+V["R3_RANGE"] = kusd(rr[k3]["vs_hodl_mean_usd"])
+V["R3_NV_P5"] = kusd(nv3[k3]["vs_hodl_p5_usd"])
+V["R3_CASH95"] = kusd(rr[k3]["cash_p95"], False)
+V["R_CLEARED"] = f"{max(rr[k1]['cleared'], nv3[k1]['cleared'], h2[k1]['cleared'])*100:.0f}%"
+V["R_ET_MED"] = f"{rr[k1]['E_T_med']:.0f}"
+V["R_IV_RICH"] = kusd(rr["iv_rich"]["vs_hodl_mean_usd"])
+V["R_IV_CHEAP"] = kusd(rr["iv_cheap"]["vs_hodl_mean_usd"])
+V["R_USD4"] = kusd(rr["usd4"]["vs_hodl_mean_usd"])
+
 # ---- chart data ----
 data = dict(
     strip=strip,
     ts=dict(date=ts["date"].tolist(), price=[round(x, 2) for x in ts["price"]],
             A=[round(x, 2) for x in ts["A. Call-only exit"]], B=[round(x, 2) for x in ts["B. Your plan, adds up to 2x"]],
             dA=ts["A. Call-only exit|days"].tolist(), dB=ts["B. Your plan, adds up to 2x|days"].tolist()),
+    rng=dict(date=RG["hist_ts"]["date"], price=RG["hist_ts"]["price"],
+             r1=[round(v * POS / 100 / 1000, 2) for v in RG["hist_ts"][k1 + "|vs_hodl"]],
+             r3=[round(v * POS / 100 / 1000, 2) for v in RG["hist_ts"][k3 + "|vs_hodl"]],
+             hodl=RG["hist_ts"]["hodl"], s1=RG["hist_ts"][k1]),
     plan=dict(date=h1["ts"]["date"], price=h1["ts"]["price"], hodl=h1["ts"]["hodl"], plan=h1["ts"][pk],
               fix=h1["ts"][fx], planW=h1["ts"][pk + "|maxW"], fixW=h1["ts"][fx + "|maxW"]),
 )

@@ -589,7 +589,7 @@
    }
   },
   "Dip -35%, then recovers to $2,400": {
-   "desc": "Falls to ~$1,300 over 3 months, ends the year at ~$2,400.",
+   "desc": "Average path falls to ~$1,300 over 3 months and ends the year at ~$2,400.",
    "eth_end_med": 2050.994961530224,
    "eth_end_p5": 820.8644831173225,
    "eth_end_p95": 5080.137164823217,
@@ -846,7 +846,7 @@
    }
   },
   "Bull +80% in a year": {
-   "desc": "Steady uptrend to ~$3,600.",
+   "desc": "Average path rises steadily to ~$3,600.",
    "eth_end_med": 3157.448910981867,
    "eth_end_p5": 1360.5780266640163,
    "eth_end_p95": 7354.002396834601,
@@ -1103,7 +1103,7 @@
    }
   },
   "2022 replay: -60% in 6 months, then flat": {
-   "desc": "Slides to ~$800 and stays there.",
+   "desc": "Average path slides to ~$800 and stays there.",
    "eth_end_med": 658.773234396525,
    "eth_end_p5": 225.90797155463324,
    "eth_end_p95": 1895.7860775738625,
@@ -1360,7 +1360,7 @@
    }
   },
   "Slow bleed -50% in a year": {
-   "desc": "Grinds down to ~$1,000 by year end.",
+   "desc": "Average path grinds down to ~$1,000 by year end.",
    "eth_end_med": 835.5016939064558,
    "eth_end_p5": 314.5274008387235,
    "eth_end_p95": 2231.9976210410814,
