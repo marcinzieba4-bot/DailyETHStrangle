@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of %%ASOF%%</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest question first: the monthly ladder of 1-year ATM puts run continuously from January 2020 with compounding. It shows yearly returns, maximum drawdown and what happens with leverage. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
+  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest question first: the monthly ladder of 1-year ATM puts with a delta hedge (short ETH perps against the puts' ETH exposure), run from January 2020. Next comes the same ladder unhedged, with yearly returns, maximum drawdown and leverage. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>%%ETH%%</b></span>
     <span>Daily ATM IV <b>%%DAILY_IV%%%</b></span>
@@ -138,15 +138,51 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: lever the collateral, not the notional</h2>
+  <h2 id="v-h">Bottom line: a full delta hedge removes the return; hedging only in downtrends halves the drawdown</h2>
   <ul>
-    <li><strong>From Jan 2020, the plain cash-secured put ladder made %%L1_CAGR%% a year with a worst drop of %%L1_DD%%.</strong> Premiums follow the market: they were richest in 2021 and leanest in 2023, and are %%LV_PREM_NOW%% today.</li>
-    <li><strong>The best version is 1× notional, plus your size-up after losses, plus about 4% earned on the collateral: %%LB_CAGR%% a year, worst drop %%LB_DD%%</strong>, recovered by %%LB_REC%%. That turned $100k into %%LB_FINAL%%; on your %%SELL%% it would be about %%LB_USD%%. It held up from every start date tested, including the Nov 2021 top (%%LS_TOP%% a year while holding ETH lost %%LS_TOP_HODL%% a year).</li>
-    <li><strong>More notional mostly buys more drawdown.</strong> 2× made %%L2_CAGR%% a year with a %%L2_DD%% drop. 3× was liquidated in %%L3_LIQ%%. With the size-up and yield, 1.5× made %%L15_CAGR%% (%%L15_DD%% drop) and 2× made %%L2S_CAGR%% (%%L2S_DD%% drop).</li>
-    <li><strong>Put spreads and a 200-day trend filter made it worse.</strong> The protective put costs more than it saves, because ETH's crashes go past it. The filter stops selling right after crashes, which is when puts pay the most.</li>
-    <li><strong>Holding ETH from Jan 2020 made %%HD_CAGR%% a year</strong> (worst drop %%HD_DD%%), because 2020 was close to the bottom. From 2021 onward the put ladder with yield and size-ups was competitive with holding, and far steadier.</li>
+    <li><strong>Fully delta-hedged, the put ladder lost money: %%HG_FULL%% a year since 2020</strong> (worst drop %%HG_FULL_DD%%), and it lost from every start date tested. With the ETH exposure hedged away, what is left is premium against ETH's actual moves, and 1-year puts were not priced high enough to win that. The unhedged ladder's profit came from being long ETH, not from a volatility edge.</li>
+    <li><strong>Hedging only while ETH is below its 200-day average works best.</strong> Combined with the size-up rule and 4% on collateral it made %%HG_T1%% a year with a %%HG_T1_DD%% worst drop, half the drawdown of the unhedged version (+14.6%, −42%). At 2× notional it made %%HG_T2%% with a %%HG_T2_DD%% drop, the same drawdown as unhedged 1× with more return.</li>
+    <li><strong>The trend hedge loses in choppy markets.</strong> Started in March 2024, the hedged version made %%HG_24%% a year (unhedged %%HG_24_UN%%, 2× hedged %%HG_24_2X%%), because the hedge kept switching on and off. The results also move a lot with the moving-average length.</li>
+    <li><strong>Without any hedge (previous question):</strong> 1× + size-up + 4% yield made +14.6% a year with a −42% worst drop; 3× was liquidated in June 2022.</li>
 
     </ul>
+</section>
+
+<section aria-labelledby="hg-h">
+  <h2 id="hg-h">Puts + delta hedging</h2>
+  <p>Same account as below: from 1 Jan 2020, compounding, with a monthly ladder of 1-year ATM puts, market-priced premiums and Deribit-style margin. Short puts carry ETH exposure (their delta), roughly 0.4–0.5 ETH per ETH of puts when they are near the money. The hedge is a short ETH perpetual of the same size. It is rebalanced daily whenever it is off by more than 2% of the account, at a cost of 0.05% of the traded amount. The short perp receives or pays Deribit's actual monthly funding rates. "Hedged below MA" means the hedge is on only while ETH is below its 200-day average and off above it.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Version</th>%%HG_HEAD%%<th scope="col">Per year</th><th scope="col">Worst drop</th><th scope="col">Back to the peak by</th><th scope="col">Funding, % of start</th><th scope="col">Hedge trading cost</th></tr></thead>
+      <tbody>
+%%HG_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>The fully hedged versions lose a little almost every year. 2023 was the only year ETH moved less than the puts' implied volatility. Funding barely helps: in bull markets the puts are far out of the money, so the hedge is tiny just when funding is high.</p>
+  <h3>Does it depend on when you start?</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Start date</th>%%HS_HEAD%%</tr></thead>
+      <tbody>
+%%HS_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <div class="two">
+    <div class="scroll card">
+      <table>
+        <thead><tr><th scope="col">Moving average for the hedge switch</th><th scope="col">Per year</th><th scope="col">Worst drop</th><th scope="col">Hedge cost</th></tr></thead>
+        <tbody>
+%%MA_ROWS%%
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <p>1× + size-up + 4% yield, hedged below the moving average, from Jan 2020. The best length changes from test to test, so treat the 200-day result as one reasonable choice, not an optimum.</p>
+      <p>The hedge cuts the worst drop roughly in half from every start date (about −20% instead of −36% to −42%). In return it gives up 2–6 points a year, and more in sideways markets.</p>
+    </div>
+  </div>
 </section>
 
 <section aria-labelledby="lv-h">

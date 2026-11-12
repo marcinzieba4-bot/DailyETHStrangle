@@ -47,6 +47,22 @@ def put_fwd(S, K, sig, T):
     return K * ndtr(-(d1 - sd)) - F * ndtr(-d1)
 
 
+def put_delta(S, K, sig, T):
+    """Spot delta of a long put priced on the forward F = S (1+BASIS)^T (negative)."""
+    T = np.maximum(T, 1e-6)
+    g = (1 + BASIS) ** T
+    F = S * g
+    sd = sig * np.sqrt(T)
+    d1 = (np.log(F / K) + 0.5 * sd * sd) / sd
+    return -g * ndtr(-d1)
+
+
+def load_funding(index):
+    f = pd.read_csv(os.path.join(ROOT, "data", "eth_funding_monthly.csv"), parse_dates=["month"])
+    m = dict(zip(f.month.dt.to_period("M"), f.funding_apr))
+    return pd.Series([m.get(d.to_period("M"), 0.0) for d in index], index=index)
+
+
 def load_iv(p):
     r = np.log(p).diff()
     rv = r.rolling(30, min_periods=10).std() * np.sqrt(365) * 100
@@ -56,10 +72,14 @@ def load_iv(p):
 
 
 def simulate(p, iv1, lev, spread=False, sizeup=False, cap_mult=3.0, fixed_prem=None, wing=WING, trend=False, bear_lev=0.0,
-             cash_yield=0.0, take_profit=0.05):
+             cash_yield=0.0, take_profit=0.05, hedge=0.0, hedge_trend=False, band=0.02, perp_cost=0.0005, funding=None, ma_days=200):
     S = p.to_numpy()
     IV = iv1.to_numpy()
-    MA = p.rolling(200, min_periods=50).mean().to_numpy()
+    MA = p.rolling(ma_days, min_periods=min(50, ma_days)).mean().to_numpy()
+    FU = funding.to_numpy() if funding is not None else np.zeros(len(p))
+    H = 0.0           # perp position in ETH (negative = short)
+    fund_paid = 0.0
+    hedge_cost = 0.0
     n = len(S)
     sale_days = set(np.round(np.arange(0, n, MONTH)).astype(int))
     cash = CAP0
@@ -70,6 +90,11 @@ def simulate(p, iv1, lev, spread=False, sizeup=False, cap_mult=3.0, fixed_prem=N
     loss_due = 0.0
     for d in range(n):
         s, sig = S[d], IV[d]
+        if d > 0 and H != 0.0:
+            cash += H * (s - S[d - 1])                     # perp mark-to-market
+            fcf = -H * S[d - 1] * FU[d - 1] / 365          # shorts receive positive funding
+            cash += fcf
+            fund_paid += fcf
         if cash > 0 and cash_yield:
             cash *= 1 + cash_yield / 365
         # expiries
@@ -128,8 +153,25 @@ def simulate(p, iv1, lev, spread=False, sizeup=False, cap_mult=3.0, fixed_prem=N
                 else:
                     keep.append(q)
             pos = keep
+        # delta hedge with ETH perp
+        if liquidated is None and (hedge > 0 or hedge_trend):
+            h = (1.0 if s < MA[d] else 0.0) if hedge_trend else hedge
+            book = 0.0
+            for q in pos:
+                T = 1 - (d - q["t0"]) / 365
+                dl = -put_delta(s, q["K"], sig, T)
+                if spread:
+                    dl -= -put_delta(s, q["Kw"], sig + WING_SKEW, T)
+                book += q["size"] * dl
+            target = -h * book
+            eq_now = cash - sum(q["size"] * put_fwd(s, q["K"], sig, 1 - (d - q["t0"]) / 365) for q in pos)
+            if abs(target - H) * s > band * max(eq_now, 1.0) or (target == 0.0 and H != 0.0):
+                c = abs(target - H) * s * perp_cost
+                cash -= c
+                hedge_cost += c
+                H = target
         # daily mark and maintenance
-        liab, mm = 0.0, 0.0
+        liab, mm = 0.0, abs(H) * s * 0.01
         for q in pos:
             T = 1 - (d - q["t0"]) / 365
             m = put_fwd(s, q["K"], sig, T)
@@ -140,12 +182,14 @@ def simulate(p, iv1, lev, spread=False, sizeup=False, cap_mult=3.0, fixed_prem=N
                 req = min(req, q["size"] * (q["K"] - q["Kw"]))
             mm += req
         if liquidated is None and pos and cash < mm:
-            cash -= liab * 1.01
+            cash -= liab * 1.01 + abs(H) * s * perp_cost
+            H = 0.0
             pos = []
             liquidated = str(p.index[d].date())
             liab = 0.0
         eq[d] = cash - liab
     e = pd.Series(eq, index=p.index)
+    simulate.last_extra = dict(funding=fund_paid, hedge_cost=hedge_cost)
     return e, liquidated, peak_notional
 
 
@@ -190,12 +234,22 @@ def main():
         "Puts 1× + size-up + 4% yield": dict(lev=1.0, sizeup=True, cash_yield=0.04),
         "Puts 1.5× + size-up + 4% yield": dict(lev=1.5, sizeup=True, cash_yield=0.04),
         "Puts 2× + size-up + 4% yield": dict(lev=2.0, sizeup=True, cash_yield=0.04),
+        "Puts 1×, delta-hedged daily": dict(lev=1.0, hedge=1.0),
+        "Puts 1×, 50% delta-hedged": dict(lev=1.0, hedge=0.5),
+        "Puts 1×, hedged only below 200-day MA": dict(lev=1.0, hedge_trend=True),
+        "Puts 1× + size-up + 4% yield, delta-hedged": dict(lev=1.0, hedge=1.0, sizeup=True, cash_yield=0.04),
+        "Puts 1× + size-up + 4% yield, hedged below 200-day MA": dict(lev=1.0, hedge_trend=True, sizeup=True, cash_yield=0.04),
+        "Puts 2× + size-up + 4% yield, hedged below 200-day MA": dict(lev=2.0, hedge_trend=True, sizeup=True, cash_yield=0.04),
+        "Puts 3× + size-up + 4% yield, hedged below 200-day MA": dict(lev=3.0, hedge_trend=True, sizeup=True, cash_yield=0.04),
+        "Puts 2×, delta-hedged daily": dict(lev=2.0, hedge=1.0),
     }
     out = dict(start=str(p.index[0].date()), end=str(p.index[-1].date()), cap0=CAP0, variants={}, series={})
+    fu = load_funding(p.index)
     for name, kw in variants.items():
-        e, liq, pk = simulate(p, iv1, **kw)
+        e, liq, pk = simulate(p, iv1, funding=fu, **kw)
         st = stats(e)
-        st.update(liquidated=liq, peak_notional_x=pk)
+        st.update(liquidated=liq, peak_notional_x=pk, funding_pct=simulate.last_extra["funding"] / CAP0 * 100,
+                  hedge_cost_pct=simulate.last_extra["hedge_cost"] / CAP0 * 100)
         out["variants"][name] = st
         out["series"][name] = (e.resample("W").last() / CAP0 * 100).round(2).tolist()
         print(f"{name:34s} CAGR {st['cagr']:+6.1f}%  maxDD {st['maxdd']:6.1f}% ({st['dd_peak']}→{st['dd_trough']}, recovered {st['dd_recovered']})  "
@@ -215,6 +269,11 @@ def main():
     out["premium_by_year"] = prem.resample("YE").mean().round(1).rename(lambda d: d.year).to_dict()
     out["premium_now"] = float(prem.iloc[-1])
     print("model 1y ATM put premium by year:", out["premium_by_year"], "now", round(out["premium_now"], 1))
+    out["ma_sensitivity"] = {}
+    for ma in (50, 100, 150, 200, 250):
+        e, _, _ = simulate(p, iv1, lev=1.0, hedge_trend=True, sizeup=True, cash_yield=0.04, funding=fu, ma_days=ma)
+        st = stats(e)
+        out["ma_sensitivity"][ma] = dict(cagr=st["cagr"], maxdd=st["maxdd"], hedge_cost=simulate.last_extra["hedge_cost"] / CAP0 * 100)
     with open(os.path.join(ROOT, "results", "leverage.json"), "w") as fh:
         json.dump(out, fh, indent=1, default=float)
 

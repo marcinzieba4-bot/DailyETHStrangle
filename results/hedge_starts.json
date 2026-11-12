@@ -1,0 +1,192 @@
+{
+ "2020-01-01": {
+  "1\u00d7 + size-up + yield (unhedged)": {
+   "cagr": 14.620398964387714,
+   "maxdd": -41.58784583251413,
+   "final": 2.5508189398735026,
+   "liq": null
+  },
+  "1\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 12.516462206793676,
+   "maxdd": -21.202029296556745,
+   "final": 2.2462320043852575,
+   "liq": null
+  },
+  "2\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 19.464129710882716,
+   "maxdd": -42.91093329373996,
+   "final": 3.387903324263585,
+   "liq": null
+  },
+  "3\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 24.64689119681127,
+   "maxdd": -62.290791676573896,
+   "final": 4.533115620115078,
+   "liq": null
+  },
+  "1\u00d7 fully hedged": {
+   "cagr": -2.9872820711042913,
+   "maxdd": -21.99560375884063,
+   "final": 0.8118179572239623,
+   "liq": null
+  },
+  "Hold ETH": {
+   "cagr": 49.38564528419447,
+   "maxdd": -80.01795960547206,
+   "final": 15.718814769325247,
+   "liq": null
+  }
+ },
+ "2021-01-01": {
+  "1\u00d7 + size-up + yield (unhedged)": {
+   "cagr": 12.116675866897708,
+   "maxdd": -41.823733202251375,
+   "final": 1.9545417219966557,
+   "liq": null
+  },
+  "1\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 9.971036710735536,
+   "maxdd": -21.62687364331174,
+   "final": 1.7452347774299921,
+   "liq": null
+  },
+  "2\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 14.091470613670198,
+   "maxdd": -43.27642792161911,
+   "final": 2.1644013748978903,
+   "liq": null
+  },
+  "3\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 16.36653741511409,
+   "maxdd": -62.86195193571857,
+   "final": 2.4290992496128916,
+   "liq": null
+  },
+  "1\u00d7 fully hedged": {
+   "cagr": -2.4058101705324075,
+   "maxdd": -18.062595691008664,
+   "final": 0.8666490508528825,
+   "liq": null
+  },
+  "Hold ETH": {
+   "cagr": 19.006356876812735,
+   "maxdd": -80.01795960547204,
+   "final": 2.773144637053088,
+   "liq": null
+  }
+ },
+ "2021-11-09": {
+  "1\u00d7 + size-up + yield (unhedged)": {
+   "cagr": 11.299117379787592,
+   "maxdd": -35.53458984989625,
+   "final": 1.7087920674557338,
+   "liq": null
+  },
+  "1\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 8.43380605700068,
+   "maxdd": -19.48913196540756,
+   "final": 1.4995772564874796,
+   "liq": null
+  },
+  "2\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 10.86001177022926,
+   "maxdd": -39.496656832148744,
+   "final": 1.6746544789212792,
+   "liq": null
+  },
+  "3\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 11.84725897846679,
+   "maxdd": -56.830973964008734,
+   "final": 1.7500045912015065,
+   "liq": null
+  },
+  "1\u00d7 fully hedged": {
+   "cagr": -2.140918129659841,
+   "maxdd": -13.856981282550962,
+   "final": 0.8969365602395765,
+   "liq": null
+  },
+  "Hold ETH": {
+   "cagr": -15.64283149978596,
+   "maxdd": -80.01795960547206,
+   "final": 0.4266323031214711,
+   "liq": null
+  }
+ },
+ "2022-06-18": {
+  "1\u00d7 + size-up + yield (unhedged)": {
+   "cagr": 13.057613507513377,
+   "maxdd": -35.84245847872063,
+   "final": 1.7159226747862448,
+   "liq": null
+  },
+  "1\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 7.2791084122260985,
+   "maxdd": -19.665036568923554,
+   "final": 1.3620375268379552,
+   "liq": null
+  },
+  "2\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 9.635029990149668,
+   "maxdd": -39.58044445916455,
+   "final": 1.4980359813205257,
+   "liq": null
+  },
+  "3\u00d7 trend-hedged + size-up + yield": {
+   "cagr": 11.078879563860621,
+   "maxdd": -57.307067471907466,
+   "final": 1.586123978312776,
+   "liq": null
+  },
+  "1\u00d7 fully hedged": {
+   "cagr": -1.4747917754753037,
+   "maxdd": -14.19289758179979,
+   "final": 0.9362382950561632,
+   "liq": null
+  },
+  "Hold ETH": {
+   "cagr": 17.598785418618633,
+   "maxdd": -67.03292095657989,
+   "final": 2.0414838889775084,
+   "liq": null
+  }
+ },
+ "2024-03-12": {
+  "1\u00d7 + size-up + yield (unhedged)": {
+   "cagr": 6.321587410774709,
+   "maxdd": -35.805083053541786,
+   "final": 1.1775389579570628,
+   "liq": null
+  },
+  "1\u00d7 trend-hedged + size-up + yield": {
+   "cagr": -0.16639897764854084,
+   "maxdd": -19.126438810012313,
+   "final": 0.9953622757198114,
+   "liq": null
+  },
+  "2\u00d7 trend-hedged + size-up + yield": {
+   "cagr": -5.404423694578176,
+   "maxdd": -38.8537977115792,
+   "final": 0.8617187910782235,
+   "liq": null
+  },
+  "3\u00d7 trend-hedged + size-up + yield": {
+   "cagr": -10.474335100751997,
+   "maxdd": -55.810841142130016,
+   "final": 0.7436504688378988,
+   "liq": null
+  },
+  "1\u00d7 fully hedged": {
+   "cagr": -3.7120180515820222,
+   "maxdd": -11.199279471373625,
+   "final": 0.9036597120529117,
+   "liq": null
+  },
+  "Hold ETH": {
+   "cagr": -22.366683401449585,
+   "maxdd": -67.03292095657989,
+   "final": 0.5087378013634647,
+   "liq": null
+  }
+ }
+}

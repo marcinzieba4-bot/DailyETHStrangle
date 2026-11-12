@@ -118,6 +118,18 @@ puts bought back at 95% profit.
 
 `leverage_starts.json`: same variants from 2021, Nov 2021 top, Jun 2022 bottom, Mar 2024.
 
+### + delta hedging (short ETH-PERP against the puts' delta, daily, 2% band, real funding)
+
+| Version (from Jan 2020) | CAGR | Max drawdown |
+|---|---|---|
+| Puts 1×, fully delta-hedged | −3.0% | −22% |
+| Puts 1×, hedged only below 200-day MA | +5.6% | −22% |
+| 1× + size-up + 4% yield, hedged below 200-day MA | **+12.5%** | **−21%** |
+| 2× + size-up + 4% yield, hedged below 200-day MA | +19.5% | −43% |
+
+Full hedging loses from every start date (the 1-year put premium did not beat ETH's realised volatility);
+the trend hedge halves drawdowns but whipsaws in sideways markets (Mar 2024 start: ~0%/yr). `hedge_starts.json`.
+
 ## Layout
 
 ```

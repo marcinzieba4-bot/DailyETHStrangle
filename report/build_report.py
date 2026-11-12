@@ -804,6 +804,52 @@ V["LS_TOP"] = pct(LS["2021-11-09"]["1× + size-up + 4% yield"]["cagr"], 1)
 V["LS_TOP_HODL"] = pct(LS["2021-11-09"]["Hold ETH"]["cagr"], 1)
 V["LS_21_PLAIN"] = pct(LS["2021-01-01"]["Puts 1×"]["cagr"], 1)
 
+# ---- version 10: puts + delta hedging ----
+HS = json.load(open(os.path.join(ROOT, "results", "hedge_starts.json")))
+hord = [("Puts 1× (cash-secured)", "Puts 1×, no hedge"),
+        ("Puts 1×, delta-hedged daily", "Puts 1×, fully delta-hedged"),
+        ("Puts 1×, 50% delta-hedged", "Puts 1×, 50% hedged"),
+        ("Puts 1×, hedged only below 200-day MA", "Puts 1×, hedged only below 200-day MA"),
+        ("Puts 1× + size-up + 4% yield", "1× + size-up + yield, no hedge"),
+        ("Puts 1× + size-up + 4% yield, delta-hedged", "1× + size-up + yield, fully hedged"),
+        ("Puts 1× + size-up + 4% yield, hedged below 200-day MA", "1× + size-up + yield, hedged below MA"),
+        ("Puts 2× + size-up + 4% yield, hedged below 200-day MA", "2× + size-up + yield, hedged below MA"),
+        ("Puts 3× + size-up + 4% yield, hedged below 200-day MA", "3× + size-up + yield, hedged below MA"),
+        ("Puts 2×, delta-hedged daily", "Puts 2×, fully hedged")]
+hrows = []
+for k, lab in hord:
+    v = LV["variants"][k]
+    rec = v.get("dd_recovered")
+    cells = "".join(f"<td class='{'pos' if v['yearly'].get(str(y), 0) > 0.5 else ('neg' if v['yearly'].get(str(y), 0) < -0.5 else '')}'>{pct(v['yearly'].get(str(y), 0), 0)}</td>" for y in years)
+    strong = "hedged below MA" in lab and lab.startswith("1×")
+    nm = f"<strong>{html.escape(lab)}</strong>" if strong else html.escape(lab)
+    hrows.append(f"<tr><th scope='row'>{nm}</th>{cells}<td><strong>{pct(v['cagr'], 1)}</strong></td><td class='neg'>{pct(v['maxdd'], 0)}</td>"
+                 f"<td>{pd.Timestamp(rec).strftime('%b %Y') if rec else 'not yet'}</td>"
+                 f"<td>{pct(v.get('funding_pct', 0), 0)}</td><td>{v.get('hedge_cost_pct', 0):.0f}%</td></tr>")
+V["HG_HEAD"] = "".join(f"<th scope='col'>{y}{' YTD' if y == years[-1] else ''}</th>" for y in years)
+V["HG_ROWS"] = "\n".join(hrows)
+hsv = ["1× + size-up + yield (unhedged)", "1× trend-hedged + size-up + yield", "2× trend-hedged + size-up + yield", "1× fully hedged", "Hold ETH"]
+hsl = {"1× + size-up + yield (unhedged)": "1× + size-up + yield, no hedge", "1× trend-hedged + size-up + yield": "Same, hedged below MA",
+       "2× trend-hedged + size-up + yield": "2×, hedged below MA", "1× fully hedged": "1×, fully hedged", "Hold ETH": "Hold ETH"}
+lab2 = {"2020-01-01": "1 Jan 2020", "2021-01-01": "1 Jan 2021", "2021-11-09": "9 Nov 2021 (top)", "2022-06-18": "18 Jun 2022 (bottom)", "2024-03-12": "12 Mar 2024"}
+V["HS_HEAD"] = "".join(f"<th scope='col'>{html.escape(hsl[k])}</th>" for k in hsv)
+V["HS_ROWS"] = "\n".join(
+    f"<tr><th scope='row'>{lab2.get(d_, d_)}</th>" + "".join(
+        f"<td><span class='{'pos' if row[k]['cagr'] > 0 else 'neg'}'>{pct(row[k]['cagr'], 1)}/yr</span><span class='sm'>worst drop {pct(row[k]['maxdd'], 0)}</span></td>"
+        for k in hsv) + "</tr>" for d_, row in HS.items())
+V["MA_ROWS"] = "".join(f"<tr><th scope='row'>{ma}-day</th><td>{pct(v['cagr'], 1)}</td><td class='neg'>{pct(v['maxdd'], 0)}</td><td>{v['hedge_cost']:.0f}%</td></tr>"
+                       for ma, v in LV["ma_sensitivity"].items())
+g_ = LV["variants"]
+V["HG_FULL"] = pct(g_["Puts 1×, delta-hedged daily"]["cagr"], 1)
+V["HG_FULL_DD"] = pct(g_["Puts 1×, delta-hedged daily"]["maxdd"], 0)
+V["HG_T1"] = pct(g_["Puts 1× + size-up + 4% yield, hedged below 200-day MA"]["cagr"], 1)
+V["HG_T1_DD"] = pct(g_["Puts 1× + size-up + 4% yield, hedged below 200-day MA"]["maxdd"], 0)
+V["HG_T2"] = pct(g_["Puts 2× + size-up + 4% yield, hedged below 200-day MA"]["cagr"], 1)
+V["HG_T2_DD"] = pct(g_["Puts 2× + size-up + 4% yield, hedged below 200-day MA"]["maxdd"], 0)
+V["HG_24"] = pct(HS["2024-03-12"]["1× trend-hedged + size-up + yield"]["cagr"], 1)
+V["HG_24_UN"] = pct(HS["2024-03-12"]["1× + size-up + yield (unhedged)"]["cagr"], 1)
+V["HG_24_2X"] = pct(HS["2024-03-12"]["2× trend-hedged + size-up + yield"]["cagr"], 1)
+
 # ---- chart data ----
 data = dict(
     strip=strip,

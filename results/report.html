@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of 12 Nov 2026, 13:52 UTC</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is 62.45 ETH at today's on-chain rate of 1.2491. At ETH $2,009.10 that is $125,474. Selling now nets about <strong>$125,411</strong>. This page tests your latest question first: the monthly ladder of 1-year ATM puts run continuously from January 2020 with compounding. It shows yearly returns, maximum drawdown and what happens with leverage. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
+  <p class="lede">You hold 50 wstETH, which is 62.45 ETH at today's on-chain rate of 1.2491. At ETH $2,009.10 that is $125,474. Selling now nets about <strong>$125,411</strong>. This page tests your latest question first: the monthly ladder of 1-year ATM puts with a delta hedge (short ETH perps against the puts' ETH exposure), run from January 2020. Next comes the same ladder unhedged, with yearly returns, maximum drawdown and leverage. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>$2,009.10</b></span>
     <span>Daily ATM IV <b>61.0%</b></span>
@@ -138,15 +138,64 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: lever the collateral, not the notional</h2>
+  <h2 id="v-h">Bottom line: a full delta hedge removes the return; hedging only in downtrends halves the drawdown</h2>
   <ul>
-    <li><strong>From Jan 2020, the plain cash-secured put ladder made +6.5% a year with a worst drop of −43%.</strong> Premiums follow the market: they were richest in 2021 and leanest in 2023, and are 19.1% today.</li>
-    <li><strong>The best version is 1× notional, plus your size-up after losses, plus about 4% earned on the collateral: +14.6% a year, worst drop −42%</strong>, recovered by Apr 2023. That turned $100k into ×2.55; on your $125,411 it would be about $319,901. It held up from every start date tested, including the Nov 2021 top (+11.3% a year while holding ETH lost −15.6% a year).</li>
-    <li><strong>More notional mostly buys more drawdown.</strong> 2× made +9.8% a year with a −80% drop. 3× was liquidated in June 2022. With the size-up and yield, 1.5× made +18.7% (−60% drop) and 2× made +21.7% (−78% drop).</li>
-    <li><strong>Put spreads and a 200-day trend filter made it worse.</strong> The protective put costs more than it saves, because ETH's crashes go past it. The filter stops selling right after crashes, which is when puts pay the most.</li>
-    <li><strong>Holding ETH from Jan 2020 made +49.4% a year</strong> (worst drop −80%), because 2020 was close to the bottom. From 2021 onward the put ladder with yield and size-ups was competitive with holding, and far steadier.</li>
+    <li><strong>Fully delta-hedged, the put ladder lost money: −3.0% a year since 2020</strong> (worst drop −22%), and it lost from every start date tested. With the ETH exposure hedged away, what is left is premium against ETH's actual moves, and 1-year puts were not priced high enough to win that. The unhedged ladder's profit came from being long ETH, not from a volatility edge.</li>
+    <li><strong>Hedging only while ETH is below its 200-day average works best.</strong> Combined with the size-up rule and 4% on collateral it made +12.5% a year with a −21% worst drop, half the drawdown of the unhedged version (+14.6%, −42%). At 2× notional it made +19.5% with a −43% drop, the same drawdown as unhedged 1× with more return.</li>
+    <li><strong>The trend hedge loses in choppy markets.</strong> Started in March 2024, the hedged version made −0.2% a year (unhedged +6.3%, 2× hedged −5.4%), because the hedge kept switching on and off. The results also move a lot with the moving-average length.</li>
+    <li><strong>Without any hedge (previous question):</strong> 1× + size-up + 4% yield made +14.6% a year with a −42% worst drop; 3× was liquidated in June 2022.</li>
 
     </ul>
+</section>
+
+<section aria-labelledby="hg-h">
+  <h2 id="hg-h">Puts + delta hedging</h2>
+  <p>Same account as below: from 1 Jan 2020, compounding, with a monthly ladder of 1-year ATM puts, market-priced premiums and Deribit-style margin. Short puts carry ETH exposure (their delta), roughly 0.4–0.5 ETH per ETH of puts when they are near the money. The hedge is a short ETH perpetual of the same size. It is rebalanced daily whenever it is off by more than 2% of the account, at a cost of 0.05% of the traded amount. The short perp receives or pays Deribit's actual monthly funding rates. "Hedged below MA" means the hedge is on only while ETH is below its 200-day average and off above it.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Version</th><th scope='col'>2020</th><th scope='col'>2021</th><th scope='col'>2022</th><th scope='col'>2023</th><th scope='col'>2024</th><th scope='col'>2025</th><th scope='col'>2026 YTD</th><th scope="col">Per year</th><th scope="col">Worst drop</th><th scope="col">Back to the peak by</th><th scope="col">Funding, % of start</th><th scope="col">Hedge trading cost</th></tr></thead>
+      <tbody>
+<tr><th scope='row'>Puts 1×, no hedge</th><td class='pos'>+22%</td><td class='pos'>+24%</td><td class='neg'>−29%</td><td class='pos'>+37%</td><td class='pos'>+15%</td><td class=''>0%</td><td class='neg'>−9%</td><td><strong>+6.5%</strong></td><td class='neg'>−43%</td><td>Feb 2024</td><td>0%</td><td>0%</td></tr>
+<tr><th scope='row'>Puts 1×, fully delta-hedged</th><td class='neg'>−1%</td><td class='neg'>−2%</td><td class='neg'>−7%</td><td class='pos'>+1%</td><td class='neg'>−2%</td><td class='neg'>−8%</td><td class='neg'>−2%</td><td><strong>−3.0%</strong></td><td class='neg'>−22%</td><td>not yet</td><td>+2%</td><td>1%</td></tr>
+<tr><th scope='row'>Puts 1×, 50% hedged</th><td class='pos'>+9%</td><td class='pos'>+12%</td><td class='neg'>−17%</td><td class='pos'>+18%</td><td class='pos'>+7%</td><td class='neg'>−3%</td><td class='neg'>−4%</td><td><strong>+2.4%</strong></td><td class='neg'>−25%</td><td>May 2024</td><td>+1%</td><td>0%</td></tr>
+<tr><th scope='row'>Puts 1×, hedged only below 200-day MA</th><td class='pos'>+19%</td><td class='pos'>+20%</td><td class='neg'>−11%</td><td class='pos'>+22%</td><td class='pos'>+7%</td><td class='neg'>−9%</td><td class='neg'>−3%</td><td><strong>+5.6%</strong></td><td class='neg'>−22%</td><td>not yet</td><td>−3%</td><td>2%</td></tr>
+<tr><th scope='row'>1× + size-up + yield, no hedge</th><td class='pos'>+27%</td><td class='pos'>+29%</td><td class='neg'>−24%</td><td class='pos'>+68%</td><td class='pos'>+20%</td><td class='pos'>+9%</td><td class='neg'>−7%</td><td><strong>+14.6%</strong></td><td class='neg'>−42%</td><td>Apr 2023</td><td>0%</td><td>0%</td></tr>
+<tr><th scope='row'>1× + size-up + yield, fully hedged</th><td class='pos'>+3%</td><td class='pos'>+2%</td><td class=''>0%</td><td class='pos'>+9%</td><td class='pos'>+3%</td><td class='neg'>−4%</td><td class='pos'>+2%</td><td><strong>+2.2%</strong></td><td class='neg'>−13%</td><td>Jan 2023</td><td>+3%</td><td>1%</td></tr>
+<tr><th scope='row'><strong>1× + size-up + yield, hedged below MA</strong></th><td class='pos'>+24%</td><td class='pos'>+25%</td><td class='neg'>−4%</td><td class='pos'>+41%</td><td class='pos'>+12%</td><td class='neg'>−4%</td><td class='neg'>−1%</td><td><strong>+12.5%</strong></td><td class='neg'>−21%</td><td>Oct 2025</td><td>−3%</td><td>2%</td></tr>
+<tr><th scope='row'>2× + size-up + yield, hedged below MA</th><td class='pos'>+46%</td><td class='pos'>+48%</td><td class='neg'>−13%</td><td class='pos'>+83%</td><td class='pos'>+21%</td><td class='neg'>−13%</td><td class='neg'>−5%</td><td><strong>+19.5%</strong></td><td class='neg'>−43%</td><td>not yet</td><td>−8%</td><td>8%</td></tr>
+<tr><th scope='row'>3× + size-up + yield, hedged below MA</th><td class='pos'>+69%</td><td class='pos'>+73%</td><td class='neg'>−22%</td><td class='pos'>+129%</td><td class='pos'>+28%</td><td class='neg'>−23%</td><td class='neg'>−11%</td><td><strong>+24.6%</strong></td><td class='neg'>−62%</td><td>not yet</td><td>−15%</td><td>19%</td></tr>
+<tr><th scope='row'>Puts 2×, fully hedged</th><td class='neg'>−1%</td><td class='neg'>−6%</td><td class='neg'>−15%</td><td class='pos'>+2%</td><td class='neg'>−3%</td><td class='neg'>−16%</td><td class='neg'>−3%</td><td><strong>−6.2%</strong></td><td class='neg'>−42%</td><td>not yet</td><td>+3%</td><td>2%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The fully hedged versions lose a little almost every year. 2023 was the only year ETH moved less than the puts' implied volatility. Funding barely helps: in bull markets the puts are far out of the money, so the hedge is tiny just when funding is high.</p>
+  <h3>Does it depend on when you start?</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Start date</th><th scope='col'>1× + size-up + yield, no hedge</th><th scope='col'>Same, hedged below MA</th><th scope='col'>2×, hedged below MA</th><th scope='col'>1×, fully hedged</th><th scope='col'>Hold ETH</th></tr></thead>
+      <tbody>
+<tr><th scope='row'>1 Jan 2020</th><td><span class='pos'>+14.6%/yr</span><span class='sm'>worst drop −42%</span></td><td><span class='pos'>+12.5%/yr</span><span class='sm'>worst drop −21%</span></td><td><span class='pos'>+19.5%/yr</span><span class='sm'>worst drop −43%</span></td><td><span class='neg'>−3.0%/yr</span><span class='sm'>worst drop −22%</span></td><td><span class='pos'>+49.4%/yr</span><span class='sm'>worst drop −80%</span></td></tr>
+<tr><th scope='row'>1 Jan 2021</th><td><span class='pos'>+12.1%/yr</span><span class='sm'>worst drop −42%</span></td><td><span class='pos'>+10.0%/yr</span><span class='sm'>worst drop −22%</span></td><td><span class='pos'>+14.1%/yr</span><span class='sm'>worst drop −43%</span></td><td><span class='neg'>−2.4%/yr</span><span class='sm'>worst drop −18%</span></td><td><span class='pos'>+19.0%/yr</span><span class='sm'>worst drop −80%</span></td></tr>
+<tr><th scope='row'>9 Nov 2021 (top)</th><td><span class='pos'>+11.3%/yr</span><span class='sm'>worst drop −36%</span></td><td><span class='pos'>+8.4%/yr</span><span class='sm'>worst drop −19%</span></td><td><span class='pos'>+10.9%/yr</span><span class='sm'>worst drop −39%</span></td><td><span class='neg'>−2.1%/yr</span><span class='sm'>worst drop −14%</span></td><td><span class='neg'>−15.6%/yr</span><span class='sm'>worst drop −80%</span></td></tr>
+<tr><th scope='row'>18 Jun 2022 (bottom)</th><td><span class='pos'>+13.1%/yr</span><span class='sm'>worst drop −36%</span></td><td><span class='pos'>+7.3%/yr</span><span class='sm'>worst drop −20%</span></td><td><span class='pos'>+9.6%/yr</span><span class='sm'>worst drop −40%</span></td><td><span class='neg'>−1.5%/yr</span><span class='sm'>worst drop −14%</span></td><td><span class='pos'>+17.6%/yr</span><span class='sm'>worst drop −67%</span></td></tr>
+<tr><th scope='row'>12 Mar 2024</th><td><span class='pos'>+6.3%/yr</span><span class='sm'>worst drop −36%</span></td><td><span class='neg'>−0.2%/yr</span><span class='sm'>worst drop −19%</span></td><td><span class='neg'>−5.4%/yr</span><span class='sm'>worst drop −39%</span></td><td><span class='neg'>−3.7%/yr</span><span class='sm'>worst drop −11%</span></td><td><span class='neg'>−22.4%/yr</span><span class='sm'>worst drop −67%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="two">
+    <div class="scroll card">
+      <table>
+        <thead><tr><th scope="col">Moving average for the hedge switch</th><th scope="col">Per year</th><th scope="col">Worst drop</th><th scope="col">Hedge cost</th></tr></thead>
+        <tbody>
+<tr><th scope='row'>50-day</th><td>+19.1%</td><td class='neg'>−30%</td><td>4%</td></tr><tr><th scope='row'>100-day</th><td>+11.5%</td><td class='neg'>−33%</td><td>4%</td></tr><tr><th scope='row'>150-day</th><td>+11.8%</td><td class='neg'>−27%</td><td>3%</td></tr><tr><th scope='row'>200-day</th><td>+12.5%</td><td class='neg'>−21%</td><td>2%</td></tr><tr><th scope='row'>250-day</th><td>+9.8%</td><td class='neg'>−23%</td><td>2%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <p>1× + size-up + 4% yield, hedged below the moving average, from Jan 2020. The best length changes from test to test, so treat the 200-day result as one reasonable choice, not an optimum.</p>
+      <p>The hedge cuts the worst drop roughly in half from every start date (about −20% instead of −36% to −42%). In return it gives up 2–6 points a year, and more in sideways markets.</p>
+    </div>
+  </div>
 </section>
 
 <section aria-labelledby="lv-h">
