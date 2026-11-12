@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of 12 Nov 2026, 13:52 UTC</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is 62.45 ETH at today's on-chain rate of 1.2491. At ETH $2,009.10 that is $125,474. Selling now nets about <strong>$125,411</strong>. This page tests your plan: sell a 1 ETH ATM daily put and a 1 ETH ATM call every day. A down day adds 1 ETH of wstETH. An up day hedges 1 ETH with an ETH-PERP short. Below $2,000 the base 50 wstETH is never hedged, so you always hold at least that much there. It is compared with keeping the 50 wstETH and with selling today.</p>
+  <p class="lede">You hold 50 wstETH, which is 62.45 ETH at today's on-chain rate of 1.2491. At ETH $2,009.10 that is $125,474. Selling now nets about <strong>$125,411</strong>. This page tests your latest plan: each week sell a weekly call on 2 ETH, and short 2 ETH-PERP only if that call expires in the money. Those 2 ETH are then sold at the strike; otherwise you keep the premium and nothing is hedged. It is compared with selling today and with keeping the 50 wstETH. Earlier versions (the 1 ETH a day put-and-call plan and the quick exits) are further down.</p>
   <div class="facts">
     <span>ETH index <b>$2,009.10</b></span>
     <span>Daily ATM IV <b>61.0%</b></span>
@@ -138,18 +138,82 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: it pays if ETH ranges, and the money comes from the range, not the premium</h2>
+  <h2 id="v-h">Bottom line: 2 ETH of weekly calls is a slow exit. With a $2,000 strike floor it becomes a paid sell ladder above $2,000</h2>
   <ul>
-    <li><strong>Your intuition holds for a range.</strong> If ETH spends two years around $2,000, 1 ETH a day adds about +$11k to just keeping the 50 wstETH, and beats holding in 93% of paths. If ETH wanders and ends back at $2,000, the gain is +$20k. Over real 2-year windows since 2021 it averaged +$25k and beat holding 94% of the time.</li>
-    <li><strong>The option premium is not the source.</strong> Over two years you collect about $28k and pay back about $28k on assigned options, leaving $420. The gain is the range effect (+$9.0k): you hold more ETH after drops and less after rises, so a return to $2,000 pays you.</li>
-    <li><strong>You stay long ETH.</strong> With 1 ETH a day you are never fully out within two years. With no view on direction, the median result against selling today is −10%, the same kind of risk as holding. A 2022-style slide ends at −40% against selling and −$5.4k against holding, with about 86 ETH in hand.</li>
-    <li><strong>Keep cash ready.</strong> In a range you need about $35k of USD to buy on down days, and up to $75k. In a strong rally the perp shorts lose cash while the wstETH gains sit elsewhere, up to $383k.</li>
-    <li><strong>3 ETH a day scales everything by three.</strong> The range gain becomes +$32k. So does the tail: with no view, the worst 5% against holding is −$108k.</li>
+    <li><strong>It is slow.</strong> With ATM strikes you are fully out after about 65 weeks (median). With +5% strikes only 4% of paths are out within two years, and with +10% strikes you still hold about 46 ETH after two years. Until then you are long the unsold ETH, so the result mostly follows the ETH price.</li>
+    <li><strong>The premium improves your sale price; it is not income.</strong> Since 2021, weekly calls paid back almost exactly what they collected: -0.1% of premium at ATM, -2.9% at +5%, +0.1% at +10%, after spread and fees. Over a full ATM exit you collect about $6,803 and keep −$38.</li>
+    <li><strong>Without a floor you sell into dips.</strong> The strike follows the price down, so in a fall you sell cheap. If ETH dips to about $1,200 and comes back to $2,000, ATM calls end −19% against selling today.</li>
+    <li><strong>A $2,000 strike floor fixes that.</strong> Use strike = the higher of ATM (or +5%) and $2,000, so you never sell below $2,000. The same dip then ends +13% (2 ETH a week) or +14% (5 ETH a week at +5%). A range around $2,000 gives +15% and +17%.</li>
+    <li><strong>The cost is that you may not get out.</strong> In a 2022-style slide nothing sells: you end −38% against selling today, about the same as holding (−36%), with 60 ETH left. If you need to be out for certain, sell today.</li>
   </ul>
 </section>
 
+<section aria-labelledby="wk-h">
+  <h2 id="wk-h">Weekly calls: 2 ETH a week, hedge only when the call ends in the money</h2>
+  <p>Every Friday at the 08:00 UTC settlement, sell a weekly call on 2 ETH, or 5 ETH in one variant. At expiry, if ETH is above the strike, pay the difference and short 2 ETH-PERP. That locks those 2 ETH at the strike, while the wstETH keeps staking until you are fully hedged and sell. If ETH is below the strike, keep the premium. No puts, no buying. Two years, 10,000 paths per scenario, plus every 1- and 2-year window of real settlements since March 2021.</p>
+  <h3>Next week's calls, tonight's quotes (ETH-20NOV26)</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Strike</th><th scope="col">Bid / ask (ETH)</th><th scope="col">Mark IV</th><th scope="col">You receive per ETH</th><th scope="col">% of spot</th><th scope="col">On 2 ETH</th></tr></thead>
+      <tbody>
+<tr><th scope='row'>ATM, $2,000</th><td>0.0305 / 0.0315</td><td>53.5%</td><td>$60.4</td><td>3.02%</td><td>$121</td></tr>
+<tr><th scope='row'>+5%, $2,100</th><td>0.0115 / 0.0125</td><td>52.2%</td><td>$22.4</td><td>1.12%</td><td>$45</td></tr>
+<tr><th scope='row'>+10%, $2,200</th><td>0.0043 / 0.0047</td><td>53.9%</td><td>$8.0</td><td>0.40%</td><td>$16</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>Two years later, against selling today</h3>
+  <p>Mean in large type, then median and worst 5%, as % of $125,411. Paths that are not fully out after two years are valued at that day's price.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Scenario</th><th scope='col'>Keep 50 wstETH</th><th scope='col'>2 ETH/wk, ATM</th><th scope='col'>2 ETH/wk, +5%</th><th scope='col'>2 ETH/wk, +10%</th><th scope='col'>2 ETH/wk, ATM, never below $2,000</th><th scope='col'>5 ETH/wk, +5%, never below $2,000</th><th scope='col'>Sell 2 ETH/wk, no options</th></tr></thead>
+      <tbody>
+<tr><th scope='row'>No view (random walk)<span class='sm'>Zero drift, today&#x27;s vol.</span></th><td class='hm' style='--a:0.06' data-tone='p'><span class='big'>+5%</span><span class='sm'>med −18% · 5%: −75%</span></td><td class='hm' style='--a:0.05' data-tone='p'><span class='big'>+4%</span><span class='sm'>med 0% · 5%: −43%</span></td><td class='hm' style='--a:0.08' data-tone='p'><span class='big'>+6%</span><span class='sm'>med −3% · 5%: −57%</span></td><td class='hm' style='--a:0.07' data-tone='p'><span class='big'>+6%</span><span class='sm'>med −12% · 5%: −68%</span></td><td class='hm' style='--a:0.06' data-tone='p'><span class='big'>+5%</span><span class='sm'>med +13% · 5%: −68%</span></td><td class='hm' style='--a:0.05' data-tone='p'><span class='big'>+4%</span><span class='sm'>med +16% · 5%: −68%</span></td><td class='hm' style='--a:0.03' data-tone='p'><span class='big'>+2%</span><span class='sm'>med −1% · 5%: −32%</span></td></tr>
+<tr><th scope='row'>Range around $2,000<span class='sm'>Pulled back to $2,000 (half-life 60 days).</span></th><td class='hm' style='--a:0.03' data-tone='p'><span class='big'>+2%</span><span class='sm'>med +1% · 5%: −24%</span></td><td class='hm' style='--a:0.06' data-tone='p'><span class='big'>+4%</span><span class='sm'>med +4% · 5%: −11%</span></td><td class='hm' style='--a:0.09' data-tone='p'><span class='big'>+7%</span><span class='sm'>med +7% · 5%: −7%</span></td><td class='hm' style='--a:0.06' data-tone='p'><span class='big'>+5%</span><span class='sm'>med +4% · 5%: −17%</span></td><td class='hm' style='--a:0.19' data-tone='p'><span class='big'>+15%</span><span class='sm'>med +17% · 5%: −4%</span></td><td class='hm' style='--a:0.21' data-tone='p'><span class='big'>+17%</span><span class='sm'>med +18% · 5%: 0%</span></td><td class='hm' style='--a:0.01' data-tone='p'><span class='big'>+1%</span><span class='sm'>med 0% · 5%: −16%</span></td></tr>
+<tr><th scope='row'>Bull: doubles in 2 years<span class='sm'>Typical path rises steadily to ~$4,000.</span></th><td class='hm' style='--a:1.00' data-tone='p'><span class='big'>+171%</span><span class='sm'>med +109% · 5%: −35%</span></td><td class='hm' style='--a:0.48' data-tone='p'><span class='big'>+38%</span><span class='sm'>med +34% · 5%: −21%</span></td><td class='hm' style='--a:1.00' data-tone='p'><span class='big'>+87%</span><span class='sm'>med +74% · 5%: −19%</span></td><td class='hm' style='--a:1.00' data-tone='p'><span class='big'>+139%</span><span class='sm'>med +98% · 5%: −28%</span></td><td class='hm' style='--a:0.66' data-tone='p'><span class='big'>+53%</span><span class='sm'>med +50% · 5%: −17%</span></td><td class='hm' style='--a:0.51' data-tone='p'><span class='big'>+41%</span><span class='sm'>med +40% · 5%: −13%</span></td><td class='hm' style='--a:0.26' data-tone='p'><span class='big'>+21%</span><span class='sm'>med +17% · 5%: −21%</span></td></tr>
+<tr><th scope='row'>Rally +40% in 3 months, then flat<span class='sm'>Typical path to ~$2,800 by February, then sideways.</span></th><td class='hm' style='--a:1.00' data-tone='p'><span class='big'>+100%</span><span class='sm'>med +48% · 5%: −57%</span></td><td class='hm' style='--a:0.70' data-tone='p'><span class='big'>+56%</span><span class='sm'>med +49% · 5%: −14%</span></td><td class='hm' style='--a:1.00' data-tone='p'><span class='big'>+80%</span><span class='sm'>med +64% · 5%: −26%</span></td><td class='hm' style='--a:1.00' data-tone='p'><span class='big'>+92%</span><span class='sm'>med +57% · 5%: −44%</span></td><td class='hm' style='--a:0.75' data-tone='p'><span class='big'>+60%</span><span class='sm'>med +55% · 5%: −25%</span></td><td class='hm' style='--a:0.61' data-tone='p'><span class='big'>+49%</span><span class='sm'>med +48% · 5%: −19%</span></td><td class='hm' style='--a:0.55' data-tone='p'><span class='big'>+44%</span><span class='sm'>med +38% · 5%: −10%</span></td></tr>
+<tr><th scope='row'>Dips to ~$1,200, back at $2,000<span class='sm'>Falls 40% over 6 months; back at $2,000 after 2 years.</span></th><td class='hm' style='--a:0.04' data-tone='p'><span class='big'>+3%</span><span class='sm'>med +3% · 5%: +2%</span></td><td class='hm' style='--a:0.24' data-tone='n'><span class='big'>−19%</span><span class='sm'>med −23% · 5%: −52%</span></td><td class='hm' style='--a:0.09' data-tone='n'><span class='big'>−8%</span><span class='sm'>med −10% · 5%: −36%</span></td><td class='hm' style='--a:0.00' data-tone='n'><span class='big'>0%</span><span class='sm'>med −1% · 5%: −14%</span></td><td class='hm' style='--a:0.17' data-tone='p'><span class='big'>+13%</span><span class='sm'>med +8% · 5%: +3%</span></td><td class='hm' style='--a:0.18' data-tone='p'><span class='big'>+14%</span><span class='sm'>med +10% · 5%: +3%</span></td><td class='hm' style='--a:0.26' data-tone='n'><span class='big'>−21%</span><span class='sm'>med −23% · 5%: −47%</span></td></tr>
+<tr><th scope='row'>2022 replay: −60%, no recovery<span class='sm'>Typical path slides to ~$800 in 6 months and stays.</span></th><td class='hm' style='--a:0.45' data-tone='n'><span class='big'>−36%</span><span class='sm'>med −57% · 5%: −90%</span></td><td class='hm' style='--a:0.54' data-tone='n'><span class='big'>−44%</span><span class='sm'>med −48% · 5%: −75%</span></td><td class='hm' style='--a:0.53' data-tone='n'><span class='big'>−42%</span><span class='sm'>med −50% · 5%: −81%</span></td><td class='hm' style='--a:0.49' data-tone='n'><span class='big'>−39%</span><span class='sm'>med −53% · 5%: −86%</span></td><td class='hm' style='--a:0.47' data-tone='n'><span class='big'>−38%</span><span class='sm'>med −52% · 5%: −88%</span></td><td class='hm' style='--a:0.47' data-tone='n'><span class='big'>−38%</span><span class='sm'>med −50% · 5%: −88%</span></td><td class='hm' style='--a:0.45' data-tone='n'><span class='big'>−36%</span><span class='sm'>med −38% · 5%: −59%</span></td></tr>
+<tr><th scope='row'>History, 1-year windows<span class='sm'>1,696 daily starts, Mar 2021 – Nov 2025</span></th><td class='hm' style='--a:0.14' data-tone='p'><span class='big'>+11%</span><span class='sm'>med +1% · 5%: −60%</span></td><td class='hm' style='--a:0.18' data-tone='p'><span class='big'>+14%</span><span class='sm'>med +18% · 5%: −46%</span></td><td class='hm' style='--a:0.19' data-tone='p'><span class='big'>+15%</span><span class='sm'>med +10% · 5%: −48%</span></td><td class='hm' style='--a:0.18' data-tone='p'><span class='big'>+14%</span><span class='sm'>med +4% · 5%: −53%</span></td><td class='hm' style='--a:0.21' data-tone='p'><span class='big'>+17%</span><span class='sm'>med +21% · 5%: −51%</span></td><td class='hm' style='--a:0.26' data-tone='p'><span class='big'>+21%</span><span class='sm'>med +30% · 5%: −50%</span></td><td class='hm' style='--a:0.14' data-tone='p'><span class='big'>+11%</span><span class='sm'>med +9% · 5%: −36%</span></td></tr>
+<tr><th scope='row'>History, 2-year windows<span class='sm'>1,332 daily starts, Mar 2021 – Nov 2024</span></th><td class='hm' style='--a:0.47' data-tone='p'><span class='big'>+37%</span><span class='sm'>med +14% · 5%: −49%</span></td><td class='hm' style='--a:0.24' data-tone='p'><span class='big'>+19%</span><span class='sm'>med +25% · 5%: −46%</span></td><td class='hm' style='--a:0.46' data-tone='p'><span class='big'>+37%</span><span class='sm'>med +33% · 5%: −41%</span></td><td class='hm' style='--a:0.47' data-tone='p'><span class='big'>+38%</span><span class='sm'>med +23% · 5%: −42%</span></td><td class='hm' style='--a:0.39' data-tone='p'><span class='big'>+31%</span><span class='sm'>med +42% · 5%: −38%</span></td><td class='hm' style='--a:0.43' data-tone='p'><span class='big'>+34%</span><span class='sm'>med +42% · 5%: −37%</span></td><td class='hm' style='--a:0.14' data-tone='p'><span class='big'>+11%</span><span class='sm'>med +10% · 5%: −37%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Without a floor, every version loses in the dip-and-recover path, because it sells on the way down and misses the recovery. With the $2,000 floor, the ladder wins whenever ETH comes back to $2,000 or ranges around it. With no view on direction, 2 ETH a week at ATM with the floor averages +5% (median +13%, worst 5% −68%). In a strong bull run every version sells too early compared with holding (+53% against +171% for keeping everything). In a 2022-style slide the version without a floor is worse (−44%), because it sells part of the position on the way down.</p>
+
+  <h3>How fast you get out, and at what price</h3>
+  <p>Each cell shows the no-view value, then the range-around-$2,000 value. The average sale price is the median of the strikes at which ETH was actually sold; premiums are on top.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Variant</th><th scope="col">Weeks to fully out, median</th><th scope="col">Out within 1 year</th><th scope="col">Out within 2 years</th><th scope="col">ETH left after 2 years, median</th><th scope="col">Average sale price</th><th scope="col">Premium collected, no view</th><th scope="col">Premium kept after payouts</th></tr></thead>
+      <tbody>
+<tr><th scope='row'>2 ETH/wk, ATM</th><td>65 / 63</td><td>5% / 1%</td><td>100% / 100%</td><td>0 / 0</td><td>$1,833 / $1,906</td><td>$6,803</td><td class='neg'>−$38</td></tr>
+<tr><th scope='row'>2 ETH/wk, +5%</th><td>— / —</td><td>0% / 0%</td><td>4% / 2%</td><td>14 / 12</td><td>$1,854 / $1,975</td><td>$4,276</td><td class='neg'>−$95</td></tr>
+<tr><th scope='row'>2 ETH/wk, +10%</th><td>— / —</td><td>0% / 0%</td><td>0% / 0%</td><td>46 / 44</td><td>$1,923 / $2,031</td><td>$1,377</td><td class='pos'>+$17</td></tr>
+<tr><th scope='row'>2 ETH/wk, ATM, never below $2,000</th><td>— / —</td><td>3% / 0%</td><td>37% / 31%</td><td>22 / 10</td><td>$2,253 / $2,155</td><td>$5,188</td><td class='neg'>−$33</td></tr>
+<tr><th scope='row'>5 ETH/wk, +5%, never below $2,000</th><td>— / 76</td><td>19% / 6%</td><td>44% / 55%</td><td>12 / 0</td><td>$2,295 / $2,187</td><td>$4,106</td><td class='neg'>−$118</td></tr>
+<tr><th scope='row'>Sell 2 ETH/wk, no options</th><td>32 / 32</td><td>100% / 100%</td><td>100% / 100%</td><td>0 / 0</td><td>$1,955 / $1,972</td><td>$0</td><td class=''>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>With no view, ATM calls without a floor sell at an average of $1,833, below today's price, because half of the selling happens after ETH has drifted lower. With the floor the average sale is $2,253, but only 37% of paths are fully out within two years. Even at 5 ETH a week with the floor, you are fully out within a year only 19% of the time with no view, and 6% in a range (55% within two years).</p>
+
+  <h3>Weekly calls since 2021: premium against payout</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Strike</th><th scope="col">Premium, % of spot</th><th scope="col">After spread and fees</th><th scope="col">Average payout</th><th scope="col">Ended in the money</th><th scope="col">Kept, % of premium</th></tr></thead>
+      <tbody>
+<tr><th scope='row'>ATM</th><td>3.85%</td><td>3.69%</td><td>3.98%</td><td>52%</td><td class='neg'>-0.1%</td></tr>
+<tr><th scope='row'>+5%</th><td>1.91%</td><td>1.81%</td><td>2.07%</td><td>27%</td><td class='neg'>-2.9%</td></tr>
+<tr><th scope='row'>+10%</th><td>0.99%</td><td>0.93%</td><td>1.07%</td><td>15%</td><td class='pos'>+0.1%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Priced from DVOL scaled to tonight's weekly smile (ATM 0.95×, +5% 0.93×, +10% 0.96× DVOL), sold 3.5% below mark with 0.03% fees. Payouts are what the call actually cost at the next week's 08:00 settlement.</p>
+</section>
+
 <section aria-labelledby="rg-h">
-  <h2 id="rg-h">Your plan: 1 ETH a day, never below 50 wstETH under $2,000</h2>
+  <h2 id="rg-h">Earlier version: 1 ETH a day of puts and calls, never below 50 wstETH under $2,000</h2>
   <p>Every day at the 08:00 UTC settlement, sell a 1 ETH ATM put and a 1 ETH ATM call. Down day: the put is assigned and you take 1 ETH, first by closing a perp short, otherwise by buying wstETH that you keep. Up day: the call is assigned and you short 1 ETH-PERP. Below $2,000, calls are only sold against ETH bought above the 50 wstETH base. Above $2,000, the base is hedged too, 1 ETH per up day. Two years, 10,000 paths per scenario, plus every 1- and 2-year window of real Deribit settlements since March 2021.</p>
   <h3>Two years later</h3>
   <p>Percent columns are against selling today ($125,411): mean in large type, then median and worst 5%. Dollar columns are what the plan adds on top of keeping the 50 wstETH, over the whole period, with the share of paths where it beats holding.</p>
@@ -510,6 +574,14 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 
 <section aria-labelledby="a-h">
   <h2 id="a-h">How to use this</h2>
+  <h3>If you exit with weekly calls</h3>
+  <ol class="steps">
+    <li><strong>Set the strike to the higher of ATM (or +5%) and $2,000.</strong> This one rule decides whether the ladder sells high or sells into dips.</li>
+    <li><strong>Pick the size by how fast you want out.</strong> At 2 ETH a week, expect well over a year even if ETH holds up. 5 ETH a week roughly doubles the pace.</li>
+    <li><strong>Treat the unsold ETH as still at risk.</strong> In a slide you keep holding, and the result is close to just holding. Decide in advance at what price you would sell the rest outright.</li>
+    <li><strong>Hedge exactly at the Friday 08:00 UTC settlement, and only when the call ends in the money.</strong> Short 2 ETH-PERP or sell 2 ETH of wstETH; the economics are the same, but the perp keeps staking running and needs margin.</li>
+    <li><strong>Sell the calls at mid where you can.</strong> Weekly ATM spreads are about 0.001 ETH, roughly 3% of the premium.</li>
+  </ol>
   <h3>If you run the 1 ETH a day plan</h3>
   <ol class="steps">
     <li><strong>Treat it as holding ETH with a range-trading overlay, not as an exit.</strong> It pays when ETH keeps coming back to about $2,000 and costs you when ETH trends away.</li>

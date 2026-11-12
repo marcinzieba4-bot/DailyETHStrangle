@@ -464,6 +464,90 @@ V["R_IV_RICH"] = kusd(rr["iv_rich"]["vs_hodl_mean_usd"])
 V["R_IV_CHEAP"] = kusd(rr["iv_cheap"]["vs_hodl_mean_usd"])
 V["R_USD4"] = kusd(rr["usd4"]["vs_hodl_mean_usd"])
 
+# ---- version 4: weekly covered calls, 2 ETH a week ----
+WK = json.load(open(os.path.join(ROOT, "results", "weekly.json")))
+chain = json.load(open(os.path.join(ROOT, "data", "weekly_chain_snapshot.json")))
+wq = []
+for kstr, lab in [("2000", "ATM, $2,000"), ("2100", "+5%, $2,100"), ("2200", "+10%, $2,200")]:
+    o = next(x for x in chain if x["instrument_name"] == f"ETH-20NOV26-{kstr}-C")
+    u = o["underlying_price"]
+    net = (o["bid_price"] - min(0.0003, 0.125 * o["bid_price"])) * u
+    wq.append(f"<tr><th scope='row'>{lab}</th><td>{o['bid_price']:.4f} / {o['ask_price']:.4f}</td><td>{o['mark_iv']:.1f}%</td>"
+              f"<td>${net:,.1f}</td><td>{net/u*100:.2f}%</td><td>${2*net:,.0f}</td></tr>")
+V["WQ_ROWS"] = "\n".join(wq)
+WCOLS = [("2 ETH/wk, ATM", "2 ETH/wk, ATM"), ("2 ETH/wk, +5%", "2 ETH/wk, +5%"), ("2 ETH/wk, +10%", "2 ETH/wk, +10%"),
+         ("2 ETH/wk, ATM, strike ≥ $2,000", "2 ETH/wk, ATM, never below $2,000"),
+         ("5 ETH/wk, +5%, strike ≥ $2,000", "5 ETH/wk, +5%, never below $2,000"),
+         ("Sell 2 ETH/wk, no options", "Sell 2 ETH/wk, no options")]
+V["WK_HEAD"] = "<th scope='col'>Keep 50 wstETH</th>" + "".join(f"<th scope='col'>{html.escape(l)}</th>" for _, l in WCOLS)
+wrows = []
+wblocks = [(k, v, v["desc"]) for k, v in WK["mc"].items()]
+wblocks += [("History, 1-year windows", WK["hist"]["52"], f"{WK['hist']['52']['n']:,} daily starts, Mar 2021 – Nov 2025"),
+            ("History, 2-year windows", WK["hist"]["104"], f"{WK['hist']['104']['n']:,} daily starts, Mar 2021 – Nov 2024")]
+for name, blk, desc in wblocks:
+    h = blk["hodl"]
+    cells = [hm_cell(h["mean"], h["median"], h["p5"], 80)]
+    for k, _ in WCOLS:
+        x = blk[k]
+        cells.append(hm_cell(x["mean"], x["median"], x["p5"], 80))
+    wrows.append(f"<tr><th scope='row'>{html.escape(name)}<span class='sm'>{html.escape(desc)}</span></th>{''.join(cells)}</tr>")
+V["WK_ROWS"] = "\n".join(wrows)
+
+spd = []
+for k, l in WCOLS:
+    nv_, rg_ = WK["mc"]["No view (random walk)"][k], WK["mc"]["Range around $2,000"][k]
+    def wk_(x):
+        return "—" if x["weeks_med"] is None or x["out_2y"] < 0.5 else f"{x['weeks_med']:.0f}"
+    spd.append(f"<tr><th scope='row'>{html.escape(l)}</th>"
+               f"<td>{wk_(nv_)} / {wk_(rg_)}</td>"
+               f"<td>{nv_['out_1y']*100:.0f}% / {rg_['out_1y']*100:.0f}%</td><td>{nv_['out_2y']*100:.0f}% / {rg_['out_2y']*100:.0f}%</td>"
+               f"<td>{nv_['eth_left_med']:.0f} / {rg_['eth_left_med']:.0f}</td>"
+               f"<td>{px(P0*(1+nv_['avg_strike_rel_med']/100))} / {px(P0*(1+rg_['avg_strike_rel_med']/100))}</td>"
+               f"<td>{usd(nv_['premium_usd'])}</td><td class='{'' if abs(nv_['edge_usd']) < 0.5 else ('pos' if nv_['edge_usd'] > 0 else 'neg')}'>{'—' if abs(nv_['edge_usd']) < 0.5 else usd(nv_['edge_usd'], True)}</td></tr>")
+V["WK_SPEED"] = "\n".join(spd)
+
+ce = []
+for m, lab in [("0.0", "ATM"), ("0.05", "+5%"), ("0.1", "+10%")]:
+    e_ = WK["call_edge"][m]
+    ce.append(f"<tr><th scope='row'>{lab}</th><td>{e_['premium_pct']:.2f}%</td><td>{e_['net_pct']:.2f}%</td><td>{e_['payout_pct']:.2f}%</td>"
+              f"<td>{e_['itm']*100:.0f}%</td><td class='{'pos' if e_['edge_pct_of_premium'] > 0 else 'neg'}'>{e_['edge_pct_of_premium']:+.1f}%</td></tr>")
+V["WK_EDGE"] = "\n".join(ce)
+
+mcw = WK["mc"]
+g = lambda sc, k, f: mcw[sc][k][f]
+V["WK_ATM_WEEKS"] = f"{g('No view (random walk)', '2 ETH/wk, ATM', 'weeks_med'):.0f}"
+V["WK_10_LEFT"] = f"{g('No view (random walk)', '2 ETH/wk, +10%', 'eth_left_med'):.0f}"
+V["WK_5_OUT2"] = f"{g('No view (random walk)', '2 ETH/wk, +5%', 'out_2y')*100:.0f}%"
+V["WK_DIP_ATM"] = pct(g("Dips to ~$1,200, back at $2,000", "2 ETH/wk, ATM", "mean"), 0)
+V["WK_DIP_FLOOR"] = pct(g("Dips to ~$1,200, back at $2,000", "2 ETH/wk, ATM, strike ≥ $2,000", "mean"), 0)
+V["WK_DIP_FLOOR5"] = pct(g("Dips to ~$1,200, back at $2,000", "5 ETH/wk, +5%, strike ≥ $2,000", "mean"), 0)
+V["WK_RG_FLOOR"] = pct(g("Range around $2,000", "2 ETH/wk, ATM, strike ≥ $2,000", "mean"), 0)
+V["WK_RG_FLOOR5"] = pct(g("Range around $2,000", "5 ETH/wk, +5%, strike ≥ $2,000", "mean"), 0)
+V["WK_RG_FLOOR5_P5"] = pct(g("Range around $2,000", "5 ETH/wk, +5%, strike ≥ $2,000", "p5"), 1)
+V["WK_22"] = pct(g("2022 replay: −60%, no recovery", "2 ETH/wk, ATM, strike ≥ $2,000", "mean"), 0)
+V["WK_22_HODL"] = pct(mcw["2022 replay: −60%, no recovery"]["hodl"]["mean"], 0)
+V["WK_22_LEFT"] = f"{g('2022 replay: −60%, no recovery', '2 ETH/wk, ATM, strike ≥ $2,000', 'eth_left_med'):.0f}"
+V["WK_22_ATM"] = pct(g("2022 replay: −60%, no recovery", "2 ETH/wk, ATM", "mean"), 0)
+V["WK_BULL_FLOOR"] = pct(g("Bull: doubles in 2 years", "2 ETH/wk, ATM, strike ≥ $2,000", "mean"), 0)
+V["WK_BULL_HODL"] = pct(mcw["Bull: doubles in 2 years"]["hodl"]["mean"], 0)
+V["WK_NV_FLOOR"] = pct(g("No view (random walk)", "2 ETH/wk, ATM, strike ≥ $2,000", "mean"), 0)
+V["WK_NV_FLOOR_MED"] = pct(g("No view (random walk)", "2 ETH/wk, ATM, strike ≥ $2,000", "median"), 0)
+V["WK_NV_FLOOR_P5"] = pct(g("No view (random walk)", "2 ETH/wk, ATM, strike ≥ $2,000", "p5"), 0)
+V["WK_NV_FLOOR_OUT2"] = f"{g('No view (random walk)', '2 ETH/wk, ATM, strike ≥ $2,000', 'out_2y')*100:.0f}%"
+V["WK_NV_FLOOR5_OUT1"] = f"{g('No view (random walk)', '5 ETH/wk, +5%, strike ≥ $2,000', 'out_1y')*100:.0f}%"
+V["WK_RG_FLOOR5_OUT1"] = f"{g('Range around $2,000', '5 ETH/wk, +5%, strike ≥ $2,000', 'out_1y')*100:.0f}%"
+V["WK_RG_FLOOR5_OUT2"] = f"{g('Range around $2,000', '5 ETH/wk, +5%, strike ≥ $2,000', 'out_2y')*100:.0f}%"
+V["WK_NV_FLOOR_PX"] = px(P0 * (1 + g("No view (random walk)", "2 ETH/wk, ATM, strike ≥ $2,000", "avg_strike_rel_med") / 100))
+V["WK_NV_ATM_PX"] = px(P0 * (1 + g("No view (random walk)", "2 ETH/wk, ATM", "avg_strike_rel_med") / 100))
+V["WK_ATM_PREM"] = usd(g("No view (random walk)", "2 ETH/wk, ATM", "premium_usd"))
+V["WK_ATM_EDGE"] = usd(g("No view (random walk)", "2 ETH/wk, ATM", "edge_usd"), True)
+ce0 = WK["call_edge"]
+V["WK_E0"] = f"{ce0['0.0']['edge_pct_of_premium']:+.1f}%"
+V["WK_E5"] = f"{ce0['0.05']['edge_pct_of_premium']:+.1f}%"
+V["WK_E10"] = f"{ce0['0.1']['edge_pct_of_premium']:+.1f}%"
+V["WK_H2_FLOOR"] = pct(WK["hist"]["104"]["2 ETH/wk, ATM, strike ≥ $2,000"]["median"], 0)
+V["WK_H2_HODL"] = pct(WK["hist"]["104"]["hodl"]["median"], 0)
+
 # ---- chart data ----
 data = dict(
     strip=strip,

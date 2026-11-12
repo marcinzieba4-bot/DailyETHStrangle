@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of %%ASOF%%</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your plan: sell a 1 ETH ATM daily put and a 1 ETH ATM call every day. A down day adds 1 ETH of wstETH. An up day hedges 1 ETH with an ETH-PERP short. Below $2,000 the base 50 wstETH is never hedged, so you always hold at least that much there. It is compared with keeping the 50 wstETH and with selling today.</p>
+  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest plan: each week sell a weekly call on 2 ETH, and short 2 ETH-PERP only if that call expires in the money. Those 2 ETH are then sold at the strike; otherwise you keep the premium and nothing is hedged. It is compared with selling today and with keeping the 50 wstETH. Earlier versions (the 1 ETH a day put-and-call plan and the quick exits) are further down.</p>
   <div class="facts">
     <span>ETH index <b>%%ETH%%</b></span>
     <span>Daily ATM IV <b>%%DAILY_IV%%%</b></span>
@@ -138,18 +138,66 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: it pays if ETH ranges, and the money comes from the range, not the premium</h2>
+  <h2 id="v-h">Bottom line: 2 ETH of weekly calls is a slow exit. With a $2,000 strike floor it becomes a paid sell ladder above $2,000</h2>
   <ul>
-    <li><strong>Your intuition holds for a range.</strong> If ETH spends two years around $2,000, 1 ETH a day adds about %%R_RANGE%% to just keeping the 50 wstETH, and beats holding in %%R_RANGE_BEAT%% of paths. If ETH wanders and ends back at $2,000, the gain is %%R_WANDER%%. Over real 2-year windows since 2021 it averaged %%R_H2%% and beat holding %%R_H2_BEAT%% of the time.</li>
-    <li><strong>The option premium is not the source.</strong> Over two years you collect about %%R_PREM%% and pay back about %%R_PAY%% on assigned options, leaving %%R_EDGE%%. The gain is the range effect (%%R_GRID%%): you hold more ETH after drops and less after rises, so a return to $2,000 pays you.</li>
-    <li><strong>You stay long ETH.</strong> With 1 ETH a day you are never fully out within two years. With no view on direction, the median result against selling today is %%R_NV_SELL_MED%%, the same kind of risk as holding. A 2022-style slide ends at %%R_22_SELL%% against selling and %%R_22_HODL%% against holding, with about %%R_22_ETH%% ETH in hand.</li>
-    <li><strong>Keep cash ready.</strong> In a range you need about %%R_CASH%% of USD to buy on down days, and up to %%R_CASH95%%. In a strong rally the perp shorts lose cash while the wstETH gains sit elsewhere, up to %%R_BULL_CASH95%%.</li>
-    <li><strong>3 ETH a day scales everything by three.</strong> The range gain becomes %%R3_RANGE%%. So does the tail: with no view, the worst 5% against holding is %%R3_NV_P5%%.</li>
+    <li><strong>It is slow.</strong> With ATM strikes you are fully out after about %%WK_ATM_WEEKS%% weeks (median). With +5% strikes only %%WK_5_OUT2%% of paths are out within two years, and with +10% strikes you still hold about %%WK_10_LEFT%% ETH after two years. Until then you are long the unsold ETH, so the result mostly follows the ETH price.</li>
+    <li><strong>The premium improves your sale price; it is not income.</strong> Since 2021, weekly calls paid back almost exactly what they collected: %%WK_E0%% of premium at ATM, %%WK_E5%% at +5%, %%WK_E10%% at +10%, after spread and fees. Over a full ATM exit you collect about %%WK_ATM_PREM%% and keep %%WK_ATM_EDGE%%.</li>
+    <li><strong>Without a floor you sell into dips.</strong> The strike follows the price down, so in a fall you sell cheap. If ETH dips to about $1,200 and comes back to $2,000, ATM calls end %%WK_DIP_ATM%% against selling today.</li>
+    <li><strong>A $2,000 strike floor fixes that.</strong> Use strike = the higher of ATM (or +5%) and $2,000, so you never sell below $2,000. The same dip then ends %%WK_DIP_FLOOR%% (2 ETH a week) or %%WK_DIP_FLOOR5%% (5 ETH a week at +5%). A range around $2,000 gives %%WK_RG_FLOOR%% and %%WK_RG_FLOOR5%%.</li>
+    <li><strong>The cost is that you may not get out.</strong> In a 2022-style slide nothing sells: you end %%WK_22%% against selling today, about the same as holding (%%WK_22_HODL%%), with %%WK_22_LEFT%% ETH left. If you need to be out for certain, sell today.</li>
   </ul>
 </section>
 
+<section aria-labelledby="wk-h">
+  <h2 id="wk-h">Weekly calls: 2 ETH a week, hedge only when the call ends in the money</h2>
+  <p>Every Friday at the 08:00 UTC settlement, sell a weekly call on 2 ETH, or 5 ETH in one variant. At expiry, if ETH is above the strike, pay the difference and short 2 ETH-PERP. That locks those 2 ETH at the strike, while the wstETH keeps staking until you are fully hedged and sell. If ETH is below the strike, keep the premium. No puts, no buying. Two years, 10,000 paths per scenario, plus every 1- and 2-year window of real settlements since March 2021.</p>
+  <h3>Next week's calls, tonight's quotes (ETH-20NOV26)</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Strike</th><th scope="col">Bid / ask (ETH)</th><th scope="col">Mark IV</th><th scope="col">You receive per ETH</th><th scope="col">% of spot</th><th scope="col">On 2 ETH</th></tr></thead>
+      <tbody>
+%%WQ_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <h3>Two years later, against selling today</h3>
+  <p>Mean in large type, then median and worst 5%, as % of %%SELL%%. Paths that are not fully out after two years are valued at that day's price.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Scenario</th>%%WK_HEAD%%</tr></thead>
+      <tbody>
+%%WK_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Without a floor, every version loses in the dip-and-recover path, because it sells on the way down and misses the recovery. With the $2,000 floor, the ladder wins whenever ETH comes back to $2,000 or ranges around it. With no view on direction, 2 ETH a week at ATM with the floor averages %%WK_NV_FLOOR%% (median %%WK_NV_FLOOR_MED%%, worst 5% %%WK_NV_FLOOR_P5%%). In a strong bull run every version sells too early compared with holding (%%WK_BULL_FLOOR%% against %%WK_BULL_HODL%% for keeping everything). In a 2022-style slide the version without a floor is worse (%%WK_22_ATM%%), because it sells part of the position on the way down.</p>
+
+  <h3>How fast you get out, and at what price</h3>
+  <p>Each cell shows the no-view value, then the range-around-$2,000 value. The average sale price is the median of the strikes at which ETH was actually sold; premiums are on top.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Variant</th><th scope="col">Weeks to fully out, median</th><th scope="col">Out within 1 year</th><th scope="col">Out within 2 years</th><th scope="col">ETH left after 2 years, median</th><th scope="col">Average sale price</th><th scope="col">Premium collected, no view</th><th scope="col">Premium kept after payouts</th></tr></thead>
+      <tbody>
+%%WK_SPEED%%
+      </tbody>
+    </table>
+  </div>
+  <p>With no view, ATM calls without a floor sell at an average of %%WK_NV_ATM_PX%%, below today's price, because half of the selling happens after ETH has drifted lower. With the floor the average sale is %%WK_NV_FLOOR_PX%%, but only %%WK_NV_FLOOR_OUT2%% of paths are fully out within two years. Even at 5 ETH a week with the floor, you are fully out within a year only %%WK_NV_FLOOR5_OUT1%% of the time with no view, and %%WK_RG_FLOOR5_OUT1%% in a range (%%WK_RG_FLOOR5_OUT2%% within two years).</p>
+
+  <h3>Weekly calls since 2021: premium against payout</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Strike</th><th scope="col">Premium, % of spot</th><th scope="col">After spread and fees</th><th scope="col">Average payout</th><th scope="col">Ended in the money</th><th scope="col">Kept, % of premium</th></tr></thead>
+      <tbody>
+%%WK_EDGE%%
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Priced from DVOL scaled to tonight's weekly smile (ATM 0.95×, +5% 0.93×, +10% 0.96× DVOL), sold 3.5% below mark with 0.03% fees. Payouts are what the call actually cost at the next week's 08:00 settlement.</p>
+</section>
+
 <section aria-labelledby="rg-h">
-  <h2 id="rg-h">Your plan: 1 ETH a day, never below 50 wstETH under $2,000</h2>
+  <h2 id="rg-h">Earlier version: 1 ETH a day of puts and calls, never below 50 wstETH under $2,000</h2>
   <p>Every day at the 08:00 UTC settlement, sell a 1 ETH ATM put and a 1 ETH ATM call. Down day: the put is assigned and you take 1 ETH, first by closing a perp short, otherwise by buying wstETH that you keep. Up day: the call is assigned and you short 1 ETH-PERP. Below $2,000, calls are only sold against ETH bought above the 50 wstETH base. Above $2,000, the base is hedged too, 1 ETH per up day. Two years, 10,000 paths per scenario, plus every 1- and 2-year window of real Deribit settlements since March 2021.</p>
   <h3>Two years later</h3>
   <p>Percent columns are against selling today (%%SELL%%): mean in large type, then median and worst 5%. Dollar columns are what the plan adds on top of keeping the 50 wstETH, over the whole period, with the share of paths where it beats holding.</p>
@@ -445,6 +493,14 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 
 <section aria-labelledby="a-h">
   <h2 id="a-h">How to use this</h2>
+  <h3>If you exit with weekly calls</h3>
+  <ol class="steps">
+    <li><strong>Set the strike to the higher of ATM (or +5%) and $2,000.</strong> This one rule decides whether the ladder sells high or sells into dips.</li>
+    <li><strong>Pick the size by how fast you want out.</strong> At 2 ETH a week, expect well over a year even if ETH holds up. 5 ETH a week roughly doubles the pace.</li>
+    <li><strong>Treat the unsold ETH as still at risk.</strong> In a slide you keep holding, and the result is close to just holding. Decide in advance at what price you would sell the rest outright.</li>
+    <li><strong>Hedge exactly at the Friday 08:00 UTC settlement, and only when the call ends in the money.</strong> Short 2 ETH-PERP or sell 2 ETH of wstETH; the economics are the same, but the perp keeps staking running and needs margin.</li>
+    <li><strong>Sell the calls at mid where you can.</strong> Weekly ATM spreads are about 0.001 ETH, roughly 3% of the premium.</li>
+  </ol>
   <h3>If you run the 1 ETH a day plan</h3>
   <ol class="steps">
     <li><strong>Treat it as holding ETH with a range-trading overlay, not as an exit.</strong> It pays when ETH keeps coming back to about $2,000 and costs you when ETH trends away.</li>

@@ -66,14 +66,19 @@ class Strategy:
     stop_frac: float | None = None  # exit mode: sell everything if price closes this far below the start price
     call_floor_rel: float | None = None  # only sell calls when price >= start price * this (e.g. 1.0 = never sell below today's price)
     base_floor_rel: float | None = None  # below start price * this, keep at least Q0 of exposure (calls only on ETH bought above the base)
+    call_moneyness: float = 0.0     # call strike = price * (1 + this); 0 = ATM
+    put_moneyness: float = 0.0      # put strike = price * (1 - this)
+    call_strike_floor_rel: float | None = None  # call strike never below start price * this
+    dca: bool = False               # no options: hedge `lot` ETH every period (plain gradual selling benchmark)
 
 
-def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, stake=None, log=False):
+def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, stake=None, log=False, dt=DAY):
     """
     S    : (n, T+1) settlement prices, S[:,0] = start price
     iv   : (n, T) annualised implied vol used to price the option sold at S[:,t]
     fund : optional (n, T) or (T,) funding APR per day (overrides carry.fund_apr)
     stake: optional (n, T) or (T,) staking APR per day (overrides carry.stake_apr)
+    dt   : length of one period in years (1/365 daily, 7/365 weekly)
     Returns dict of per-path metrics (+ per-day log for n==1 if log=True).
     """
     S = np.atleast_2d(np.asarray(S, float))
@@ -125,8 +130,12 @@ def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, sta
     for t in range(T):
         S0, S1 = S[:, t], S[:, t + 1]
         E = W - H
-        K = S0
-        if strat.hold:
+        Kc = S0 * (1 + strat.call_moneyness)
+        if strat.call_strike_floor_rel is not None:
+            Kc = np.maximum(Kc, S[:, 0] * strat.call_strike_floor_rel)
+        Kp = S0 * (1 - strat.put_moneyness)
+        K = Kc
+        if strat.hold or strat.dca:
             c = p = np.zeros(n)
         else:
             c = np.where(active & strat.sell_calls, np.clip(np.minimum(lot, E), 0, None), 0.0)
@@ -136,7 +145,8 @@ def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, sta
                 floor = np.where(S0 < S[:, 0] * strat.base_floor_rel, float(Q0), 0.0)
                 c = np.minimum(c, np.clip(E - floor, 0, None))
             p = np.where(active & strat.sell_puts, np.clip(np.minimum(lot, cap - E), 0, None), 0.0)
-        call, put = bs_call_put(S0, K, iv[:, t])
+        call, _ = bs_call_put(S0, Kc, iv[:, t], dt)
+        _, put = bs_call_put(S0, Kp, iv[:, t], dt)
         net_c = call * (1 - costs.spread_haircut) - np.minimum(costs.opt_fee * S0, costs.opt_fee_cap * call)
         net_p = put * (1 - costs.spread_haircut) - np.minimum(costs.opt_fee * S0, costs.opt_fee_cap * put)
         prem = c * net_c + p * net_p
@@ -145,32 +155,35 @@ def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, sta
 
         # carry over the day (staking on wstETH, funding on perp shorts, USD yield)
         on = active | strat.hold
-        stk = np.where(on, W * S0 * stake_rate(t) * DAY, 0.0)
-        fnd = np.where(on, H * S0 * fund_rate(t) * DAY, 0.0)
+        stk = np.where(on, W * S0 * stake_rate(t) * dt, 0.0)
+        fnd = np.where(on, H * S0 * fund_rate(t) * dt, 0.0)
         cash += stk + fnd
         stake_tot += stk
         fund_tot += fnd
-        cash += cash * carry.usd_apr * DAY
+        cash += cash * carry.usd_apr * dt
         # perp mark-to-market (short)
         cash -= H * (S1 - S0)
 
         # settlement
-        up = S1 > K
-        dn = S1 < K
-        pay = c * np.maximum(S1 - K, 0) + p * np.maximum(K - S1, 0)
+        up = S1 > Kc
+        dn = S1 < Kp
+        pay = c * np.maximum(S1 - Kc, 0) + p * np.maximum(Kp - S1, 0)
         cash -= pay
         pay_tot += pay
         # up day: hedge c more ETH with perp short
         dH_up = np.where(up, c, 0.0)
+        if strat.dca:
+            dH_up = np.where(active, np.clip(np.minimum(lot, E), 0, None), 0.0)
+            Kc = S1
         hedge_eth += dH_up
-        hedge_val += dH_up * K
+        hedge_val += dH_up * Kc
         H += dH_up
         cash -= dH_up * S1 * costs.perp_fee
         cost_tot += dH_up * S1 * costs.perp_fee
         # down day: take p back -> cover perp first, then buy new wstETH
         take = np.where(dn, p, 0.0)
         add_eth += take
-        add_val += take * K
+        add_val += take * Kp
         cover = np.minimum(take, H)
         H -= cover
         cash -= cover * S1 * costs.perp_fee
@@ -218,7 +231,7 @@ def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, sta
     unwind_T = W * S_T * costs.exit_cost + H * S_T * costs.perp_fee
     cost_tot += unwind_T
     V_T = W * S_T + cash - unwind_T  # liquidation value
-    benchT = bench0 * (1 + carry.usd_apr * DAY) ** T
+    benchT = bench0 * (1 + carry.usd_apr * dt) ** T
     out = dict(V_T=V_T, bench=benchT, rel=V_T - benchT, rel_pct=V_T / benchT - 1,
                min_cash=min_cash, maxW=maxW, W_T=W, H_T=H, S_T=S_T,
                add_eth=add_eth, add_val=add_val, hedge_eth=hedge_eth, hedge_val=hedge_val,

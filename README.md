@@ -51,6 +51,16 @@ Same daily put + call, 1 ETH each. Below the start price (~$2,000) calls are onl
 * Still long ETH, never fully out in 2 years. 2022-style slide: −40% vs selling, −$5k vs holding.
   Cash reserve ≈ $35–40k per 1 ETH/day (up to $75–125k in a bad stretch).
 
+## Weekly covered calls, 2 ETH a week (`run_weekly.py`)
+
+Each week sell a weekly call on 2 ETH; short 2 ETH-PERP only if it expires in the money. No puts. Two-year horizon.
+
+* Slow: ATM strikes take ~65 weeks to be fully out; +5% strikes are out within 2 years in only ~4% of paths;
+  +10% leaves ~46 ETH after 2 years.
+* Weekly calls since 2021 kept ≈0% of premium after costs (ATM −0.1%, +5% −2.9%, +10% +0.1%).
+* Without a floor the strike follows the price down and you sell into dips (dip to $1,200 and back: −19% vs selling).
+  With strike = max(ATM, $2,000): +13% in that path, +15% in a range, but in a 2022-style slide nothing sells (−38%, like holding).
+
 ## Layout
 
 ```
@@ -60,6 +70,7 @@ sim/scenarios.py   illustrative paths, bootstrap Monte Carlo regimes, historical
 run_all.py         quick-exit variants -> results/results.json
 run_accumulate.py  dip-buying plan     -> results/accumulate.json
 run_range.py       1 ETH/day + floor   -> results/range.json
+run_weekly.py      weekly calls        -> results/weekly.json
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
 ```
@@ -71,6 +82,7 @@ pip install numpy pandas scipy
 python3 run_all.py --refresh     # re-download data + live quotes, then simulate quick exits
 python3 run_accumulate.py        # dip-buying plan
 python3 run_range.py             # 1 ETH/day with the 50 wstETH floor
+python3 run_weekly.py            # weekly covered calls, 2 ETH a week
 python3 report/build_report.py   # rebuild results/report.html
 ```
 
