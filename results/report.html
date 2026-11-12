@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of 12 Nov 2026, 13:52 UTC</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is 62.45 ETH at today's on-chain rate of 1.2491. At ETH $2,009.10 that is $125,474. Selling now nets about <strong>$125,411</strong>. This page tests your latest question first: a monthly ladder of 1-year ATM straddles (put + call) with a delta hedge, run from January 2020. Next come the put-only ladder with and without hedging, leverage, and the earlier ideas. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
+  <p class="lede">You hold 50 wstETH, which is 62.45 ETH at today's on-chain rate of 1.2491. At ETH $2,009.10 that is $125,474. Selling now nets about <strong>$125,411</strong>. This page tests your latest question first: buying a daily ATM straddle (put + call) every day, and after losing days sizing up so that a win recovers the accumulated losses, then resetting. Next come the yearly straddle and put ladders with hedging and leverage, and the earlier ideas. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>$2,009.10</b></span>
     <span>Daily ATM IV <b>61.0%</b></span>
@@ -138,14 +138,47 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: delta-hedged straddles did not pay on ETH; puts hedged only in downtrends remain the best version</h2>
+  <h2 id="v-h">Bottom line: buying daily straddles loses steadily, and the recovery size-up turns that into ruin</h2>
   <ul>
-    <li><strong>From Jan 2020 the hedged straddle ladder was liquidated in April 2021</strong>, and the unhedged one in November 2020. ETH's 10× rally turned short calls sold at $200–1,000 into huge liabilities. The long perp that hedges them paid 30–37% a year in funding (−58% of starting capital in total).</li>
-    <li><strong>ETH moved more than its 1-year options priced in almost every year.</strong> A hedged straddle is a pure bet that options are expensive, and in this pricing they were cheap in every year except 2023. Even a small 0.5× hedged straddle lost −6.8% a year.</li>
-    <li><strong>Started after the 2021 top it is close to flat (−3.5% a year, or +1.4% with size-up and 4% yield), and it hinges on option prices.</strong> If 1-year options were 10 vol points richer than this model, it made +2.9% a year, or +9.2% with size-up and yield, with drawdowns near −12%. Today 1-year implied vol is 54 and ETH realised 58 over the last year, so there is no edge right now.</li>
-    <li><strong>Best version so far: puts with size-up and 4% yield, hedged only below the 200-day average:</strong> +12.5% a year since 2020 with a −21% worst drop.</li>
+    <li><strong>The buyer pays more than ETH moves.</strong> Since Mar 2021 a daily ATM straddle cost 2.95% of the price at the ask (with fees), and the average daily move was 2.61%. You get back 88% of what you pay. The move beat the premium on 33% of days, and beat twice the premium on 9%.</li>
+    <li><strong>Fixed size, 10% of capital a day: −69% since Mar 2021</strong>, losing every year.</li>
+    <li><strong>The size-up rule is a doubling martingale.</strong> To win back a loss with a one-premium profit, you need about 33× that loss in size. After a few bad days the bet reached 176× the base and was larger than the cash left by August 2021. In 2,000 simulated 2-year paths from today the rule breaks within a year in 97% of paths. Capped at 10× it breaks within 2 years in 99%, capped at 5× in 70%.</li>
+    <li><strong>Best version so far is unchanged:</strong> selling yearly puts with size-up and 4% yield, hedged only below the 200-day average, made +12.5% a year since 2020 with a −21% worst drop.</li>
 
     </ul>
+</section>
+
+<section aria-labelledby="lg-h">
+  <h2 id="lg-h">Buying daily straddles with a loss-recovery size-up</h2>
+  <p>Every day at the 08:00 UTC settlement, buy an ATM put and call that expire the next day, on a base notional of 10% of $125,411. A day loses when ETH moves less than the premium paid, and the loss is added to an accumulated total. The next day's size adds an extra amount sized so that a move of twice the premium (a profit of one premium) recovers the whole total. Wins pay the total down; when it reaches zero the size resets to the base. One variant assumes a 1.5× move, which sizes up even harder, and two cap the size at 5× and 10× the base. The run stops when the next bet costs more than the cash left. Prices are real Deribit settlements from Mar 2021, when DVOL starts. Options are priced from DVOL with the weekday/weekend curve and bought 3.5% above value plus 0.03% per leg.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Version (from Mar 2021)</th><th scope="col">Total, % of capital</th><th scope="col">Worst drop</th><th scope="col">Largest bet, × base</th><th scope="col">Largest accumulated loss</th><th scope="col">Rule broke (next bet &gt; cash)</th><th scope="col">Winning days</th><th scope="col">Longest losing run</th></tr></thead>
+      <tbody>
+<tr><th scope='row'>Buy daily straddle, fixed size</th><td class='neg'><strong>−69%</strong></td><td class='neg'>−71%</td><td>1×</td><td>$92,458</td><td>no</td><td>33%</td><td>21</td></tr>
+<tr><th scope='row'>Buy + size-up to recover losses (2× move), no cap</th><td class='neg'><strong>−47%</strong></td><td class='neg'>−59%</td><td>176×</td><td>$95,623</td><td>Aug 2021</td><td>41%</td><td>5</td></tr>
+<tr><th scope='row'>Buy + size-up (2× move), cap 10× base</th><td class='neg'><strong>−97%</strong></td><td class='neg'>−98%</td><td>10×</td><td>$145,882</td><td>Nov 2021</td><td>37%</td><td>10</td></tr>
+<tr><th scope='row'>Buy + size-up (2× move), cap 5× base</th><td class='neg'><strong>−98%</strong></td><td class='neg'>−99%</td><td>5×</td><td>$138,752</td><td>Oct 2022</td><td>37%</td><td>15</td></tr>
+<tr><th scope='row'>Buy + size-up (1.5× move), no cap</th><td class='pos'><strong>+18%</strong></td><td class='neg'>−37%</td><td>228×</td><td>$87,262</td><td>Aug 2021</td><td>41%</td><td>5</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Fixed size, year by year: 2021: −15% · 2022: −13% · 2023: −16% · 2024: −12% · 2025: −2% · 2026: −10%. The 1.5× version was +18% up when it broke: the next bet already needed more cash than the account held. Starting in Feb 2020 instead (implied vol estimated before DVOL existed): fixed size: −89%, never broke; size-up, no cap: broke Apr 2020; cap 10×: broke May 2020; cap 5×: broke Mar 2021; 1.5× version: broke Mar 2020.</p>
+  <h3>2,000 simulated 2-year paths from today</h3>
+  <p>ETH's own 2021–2026 daily moves by weekday, resampled, at today's volatility (DVOL 56), with the same pricing and rules.</p>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Version</th><th scope="col">Rule breaks within 1 year</th><th scope="col">Within 2 years</th><th scope="col">Profitable after 2 years</th><th scope="col">Median</th><th scope="col">Worst 5%</th><th scope="col">Best 5%</th></tr></thead>
+      <tbody>
+<tr><th scope='row'>Buy daily straddle, fixed size</th><td>0%</td><td>0%</td><td>0%</td><td class='neg'>−22%</td><td class='neg'>−31%</td><td class='neg'>−14%</td></tr>
+<tr><th scope='row'>Buy + size-up to recover losses (2× move), no cap</th><td>97%</td><td>100%</td><td>2%</td><td class='neg'>−57%</td><td class='neg'>−85%</td><td class='neg'>−21%</td></tr>
+<tr><th scope='row'>Buy + size-up (2× move), cap 10× base</th><td>62%</td><td>99%</td><td>0%</td><td class='neg'>−98%</td><td class='neg'>−99%</td><td class='neg'>−98%</td></tr>
+<tr><th scope='row'>Buy + size-up (2× move), cap 5× base</th><td>1%</td><td>70%</td><td>0%</td><td class='neg'>−99%</td><td class='neg'>−100%</td><td class='neg'>−68%</td></tr>
+<tr><th scope='row'>Buy + size-up (1.5× move), no cap</th><td>100%</td><td>100%</td><td>10%</td><td class='neg'>−41%</td><td class='neg'>−76%</td><td class='pos'>+29%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Daily ETH options are priced a little above what ETH actually moves, especially at weekends, and the buyer also pays the spread. That negative edge is about 12% of every premium paid. Sizing up after losses does not change the edge. It makes each bet bigger, so the same small leak empties the account faster, and a run of 4–6 quiet days is enough to need a bet larger than the account. Sellers of these options kept only about 1% of premium after costs (see "Why there is no free lunch here" further down), so neither side of daily straddles has a meaningful edge.</p>
 </section>
 
 <section aria-labelledby="sh-h">

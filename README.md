@@ -140,6 +140,15 @@ Monthly ladder of 1-year ATM straddles from Jan 2020, delta-hedged daily with ET
 * From the Nov 2021 top: −3.5%/yr at model prices; +2.9%/yr (+9.2% with size-up + yield, DD ≈ −12%) if options were 10 vol
   points richer. Today 1-year IV ≈ 54 vs 1-year realised ≈ 58 → no edge now. `straddle_hedge_ivbump.json`.
 
+## Buying daily straddles with a loss-recovery size-up (`run_long_straddle.py`)
+
+Buy a daily ATM straddle on 10% of capital; after losses add an extra size so a 2×-premium move recovers the accumulated
+loss; reset when recovered. Real DVOL pricing from Mar 2021, bought at mark + 3.5% + fees.
+
+* Buyer gets back 88% of premiums (cost 2.95%/day vs average move 2.61%); move > premium on 33% of days, > 2× on 9%.
+* Fixed size: −69% since Mar 2021 (−12…−16%/yr). Size-up: bets reach 100–230× base; the rule breaks (next bet > cash)
+  in Aug–Nov 2021. Monte Carlo 2 years from today: breaks within 1 year in 97% (no cap), within 2 years 99% (cap 10×), 70% (cap 5×).
+
 ## Layout
 
 ```
@@ -156,6 +165,7 @@ run_straddle.py    yearly straddles    -> results/straddle.json
 run_puts.py        yearly puts only    -> results/puts.json
 run_leverage.py    puts from 2020, lev -> results/leverage.json
 run_straddle_hedge.py straddles + hedge -> results/straddle_hedge.json
+run_long_straddle.py buy daily straddles -> results/long_straddle.json
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
 ```
@@ -174,6 +184,7 @@ python3 run_straddle.py          # laddered yearly straddles with recovery sizin
 python3 run_puts.py              # laddered yearly puts with recovery sizing (2017+ windows)
 python3 run_leverage.py          # continuous put ladder from 2020 with leverage, yearly returns, drawdown
 python3 run_straddle_hedge.py    # straddle ladder + delta hedge from 2020
+python3 run_long_straddle.py     # buy daily straddles with loss-recovery size-up (+ Monte Carlo)
 python3 report/build_report.py   # rebuild results/report.html
 ```
 

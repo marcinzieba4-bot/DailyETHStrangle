@@ -902,6 +902,46 @@ V["SB_10P"] = pct(SB["2021-11-09|0.1"]["straddle_plus"]["cagr"], 1)
 V["SB_20P"] = pct(SB["2021-11-09|0.2"]["straddle_plus"]["cagr"], 1)
 V["SH_05"] = pct(SH["variants"]["Straddles 0.5×, delta-hedged"]["cagr"], 1)
 
+# ---- version 12: buy daily straddles with loss-recovery size-up ----
+LG = json.load(open(os.path.join(ROOT, "results", "long_straddle.json")))
+lg_rows = []
+for k, v in LG["variants"].items():
+    rb = v.get("ruined")
+    lg_rows.append(f"<tr><th scope='row'>{html.escape(k)}</th><td class='{'pos' if v['total_pct'] > 0 else 'neg'}'><strong>{pct(v['total_pct'], 0)}</strong></td>"
+                   f"<td class='neg'>{pct(v['maxdd_pct'], 0)}</td><td>{v['max_size_x']:.0f}×</td><td>{usd(v['max_L'])}</td>"
+                   f"<td>{pd.Timestamp(rb).strftime('%b %Y') if rb else 'no'}</td><td>{v['win_rate']*100:.0f}%</td><td>{v['max_losing_streak']}</td></tr>")
+V["LG_ROWS"] = "\n".join(lg_rows)
+lg_fx = LG["variants"]["Buy daily straddle, fixed size"]
+V["LG_YEARLY"] = " · ".join(f"{y}: {pct(v_, 0)}" for y, v_ in lg_fx["yearly"].items())
+V["LG_FIXED"] = pct(lg_fx["total_pct"], 0)
+mc_rows = []
+for k, v in LG["mc"].items():
+    mc_rows.append(f"<tr><th scope='row'>{html.escape(k)}</th><td>{v['ruin_1y']*100:.0f}%</td><td>{v['ruin_2y']*100:.0f}%</td>"
+                   f"<td>{v['profit']*100:.0f}%</td><td class='{'pos' if v['median'] > 0 else 'neg'}'>{pct(v['median'], 0)}</td>"
+                   f"<td class='neg'>{pct(v['p5'], 0)}</td><td class='{'pos' if v['p95'] > 0 else 'neg'}'>{pct(v['p95'], 0)}</td></tr>")
+V["LG_MC_ROWS"] = "\n".join(mc_rows)
+eg = LG["edge"]
+V["LG_COST"] = f"{eg['avg_cost_pct']:.2f}%"
+V["LG_MOVE"] = f"{eg['avg_move_pct']:.2f}%"
+V["LG_PAYBACK"] = f"{eg['payback_ratio']*100:.0f}%"
+V["LG_WIN"] = f"{eg['win_days']*100:.0f}%"
+V["LG_BIG"] = f"{eg['big_win_days']*100:.0f}%"
+mt = LG["variants"]["Buy + size-up to recover losses (2× move), no cap"]
+V["LG_MT_SIZE"] = f"{mt['max_size_x']:.0f}×"
+V["LG_MT_BREAK"] = pd.Timestamp(mt["ruined"]).strftime("%B %Y")
+mc0 = LG["mc"]
+V["LG_MC_UNCAP"] = f"{mc0['Buy + size-up to recover losses (2× move), no cap']['ruin_1y']*100:.0f}%"
+V["LG_MC_CAP10"] = f"{mc0['Buy + size-up (2× move), cap 10× base']['ruin_2y']*100:.0f}%"
+V["LG_MC_CAP5"] = f"{mc0['Buy + size-up (2× move), cap 5× base']['ruin_2y']*100:.0f}%"
+V["LG_MC_FIXED"] = pct(mc0["Buy daily straddle, fixed size"]["median"], 0)
+v20 = LG["variants_2020"]
+_short = {"Buy daily straddle, fixed size": "fixed size", "Buy + size-up to recover losses (2× move), no cap": "size-up, no cap",
+          "Buy + size-up (2× move), cap 10× base": "cap 10×", "Buy + size-up (2× move), cap 5× base": "cap 5×",
+          "Buy + size-up (1.5× move), no cap": "1.5× version"}
+V["LG_2020"] = "; ".join(f"{_short[k]}: " + (f"broke {pd.Timestamp(v_['ruined']).strftime('%b %Y')}" if v_["ruined"] else f"{pct(v_['total_pct'], 0)}, never broke")
+                         for k, v_ in v20.items())
+V["LG_15"] = pct(LG["variants"]["Buy + size-up (1.5× move), no cap"]["total_pct"], 0)
+
 # ---- chart data ----
 data = dict(
     strip=strip,
