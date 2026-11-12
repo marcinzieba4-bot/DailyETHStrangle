@@ -170,6 +170,21 @@ history API) plus hourly ETH-PERP bars. Components chosen on 2021–23, tested o
 * Buy Mon→Tue straddle: +0.04%/trade after costs (t 0.3) → no edge; +0.7%/yr plain, −4.3%/yr with recovery (DD −57%).
   Only Sunday buying has an edge (t 2.7). Adding Monday to Sat-sell + Sun-buy lowers Sharpe (1.35 vs 1.58).
 
+## Aggressive recovery + delta hedge after a 3% move (`run_sat_aggr.py`)
+
+Saturday straddle sale (1×, real prices since Mar 2021):
+
+| Version | CAGR | Max DD | Worst Saturday |
+|---|---|---|---|
+| No recovery | +16.4% | −17% | −11.2% |
+| Hedge once after 3% move, hold | +16.7% | −14% | −5.2% (Sharpe 1.15 → 1.46) |
+| Recover drawdown over 2 Sat, cap 3× | +24.4% | −34% | −14.8% |
+| Recover in 1 Sat, cap 5× / 10× / no cap | +35% / +37% / wiped out | −46% / −68% / −100% | −25% / −49% |
+| **Calendar (sell Sat + buy Sun) + 2-Sat recovery cap 3× + 3% hedge** | **+54%** (2024–26: +32%) | −27% | −13.5% |
+| Calendar + gentle recovery + 3% hedge | +46% | −18% | −7.4% (Sharpe 1.73) |
+
+Hedging continuously after the trigger or all day loses the edge; 3× ≈ Deribit standard-margin ceiling for a short straddle.
+
 ## Layout
 
 ```
@@ -190,6 +205,7 @@ run_long_straddle.py buy daily straddles -> results/long_straddle.json
 run_daily_vol*.py  daily vol selling   -> results/daily_vol.json
 run_weekend_vol.py weekend calendar    -> results/weekend_vol*.json
 run_sat_mon.py     Sat sell / Mon buy  -> results/sat_mon.json
+run_sat_aggr.py    aggressive recovery + trigger hedge -> results/sat_aggr.json
 sim/fetch_daily_iv.py  real daily IVs + hourly bars -> data/daily_atm_iv.csv, data/eth_perp_hourly.csv
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
@@ -214,6 +230,7 @@ python3 sim/fetch_daily_iv.py    # download real daily-option IVs + hourly bars 
 python3 run_daily_vol_select.py  # selling daily vol every day: staged selection
 python3 run_weekend_vol.py       # weekend calendar: sell Sat, buy Sun
 python3 run_sat_mon.py           # Saturday sell + recovery details; Monday buy + recovery
+python3 run_sat_aggr.py          # aggressive recovery and delta hedge after a 3% move
 python3 report/build_report.py   # rebuild results/report.html
 ```
 

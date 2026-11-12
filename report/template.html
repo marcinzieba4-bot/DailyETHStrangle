@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of %%ASOF%%</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page answers your latest question first: a detailed look at selling the Saturday daily straddle with recovery sizing, and a test of buying the Monday straddle with recovery sizing. Both use real Deribit daily-option prices. Next comes the weekend calendar these come from, then the earlier ideas. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
+  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page answers your latest question first: more aggressive recovery sizing for the Saturday straddle sale, and a delta hedge that switches on only after a 3% move. Next come the detailed Saturday and Monday study, the weekend calendar, then the earlier ideas. All daily-option results use real Deribit prices. After that come the put ladder by start date, the straddle version, and covered-call ladders on ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>%%ETH%%</b></span>
     <span>Daily ATM IV <b>%%DAILY_IV%%%</b></span>
@@ -138,14 +138,100 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: sell Saturday with a gentle recovery rule, but pair it with buying Sunday, not Monday</h2>
+  <h2 id="v-h">Bottom line: hedge after a 3% move; push recovery to about 3× and no further</h2>
   <ul>
-    <li><strong>Selling Saturday's straddle with recovery sizing made %%SR_CAGR%% a year since Mar 2021, with a %%SR_DD%% worst drop</strong> (no recovery: %%SP_CAGR%%, %%SP_DD%%). $125k would be about %%SR_FINAL%%. It won %%SR_WIN%% of Saturdays, averaging %%SR_AW%% on wins and %%SR_AL%% on losses. The worst Saturday was a 14% ETH move: −11.5% of the account.</li>
-    <li><strong>On its own it has faded.</strong> In 2024–26 it made only %%SAT_OOS%% a year (%%SAT_IS%% in 2021–23); 2024 and 2026 lost. The recovery rule was active on %%SR_RECSHARE%% of Saturdays, at %%SR_RECSIZE%% average size. It adds a little return for a deeper drawdown and does not improve the risk-adjusted result.</li>
-    <li><strong>Buying the Monday → Tuesday straddle has no edge</strong> (%%MON_MEAN%% per trade after costs, t-stat %%MON_T%%; won %%MON_WIN%% of trades). Plain it made %%MON_PLAIN%% a year with a %%MON_PLAIN_DD%% drop. With recovery sizing it made %%MON_REC%% with a %%MON_REC_DD%% drop: it was sized up %%MON_RECSHARE%% of the time and lost more. Adding it to the weekend calendar lowered the risk-adjusted return (Sharpe %%C3_SH%% vs %%C2_SH%%).</li>
-    <li><strong>The pairing that works is Saturday sell + Sunday buy.</strong> With the gentle Saturday recovery rule it made %%CAL_REC%% a year (%%CAL_REC_OOS%% in 2024–26), worst drop %%CAL_REC_DD%%. Sunday is the only day where buying had a real edge (t-stat %%SUN_T2%%).</li>
+    <li><strong>The 3% trigger hedge is close to a free improvement.</strong> Once ETH has moved 3% from the strike, short or buy ETH-PERP equal to the straddle's delta at that moment and hold it until expiry. The Saturday sale kept its return (%%AGH3%% a year) while the worst Saturday shrank from %%AGH_PLAIN_WORST%% to %%AGH3_WORST%%, the worst drop to %%AGH3_DD%%, and the Sharpe ratio rose from %%AGH0_SH%% to %%AGH3_SH%%. Re-hedging continuously after the trigger (%%AGHD%%) or all day (%%AGHALL%%) gave back the edge.</li>
+    <li><strong>More aggressive recovery buys return with drawdown, up to a point.</strong> Winning back the drawdown over 2 Saturdays with a 3× cap made %%AGR23%% a year with a %%AGR23_DD%% worst drop. A 5× cap made %%AGR5%% (worst drop %%AGR5_DD%%, worst Saturday %%AGR5_W%%), and 10× made %%AGR10%% with %%AGR10_DD%%. Resampled, 10× fell more than 50% in %%AGR10_B50%% of 2-year paths. With no cap the size hit %%AGR_NOCAP_SIZE%% and wiped the account out in 2024–26.</li>
+    <li><strong>Best aggressive version: the weekend calendar with 2-Saturday recovery capped at 3× and the 3% hedge on Saturday.</strong> It made <strong>%%AGC%% a year</strong> since Mar 2021 with a %%AGC_DD%% worst drop, and %%AGC_OOS%% a year in 2024–26 (worst drop %%AGC_OOS_DD%%). $125k would be about %%AGC_FINAL%%. The calmer version (gentle recovery + 3% hedge) made %%AGG%% with a %%AGG_DD%% drop and the best Sharpe tested (%%AGG_SH%%).</li>
+    <li><strong>3× is also roughly the margin ceiling.</strong> A short ATM straddle needs about 32% of its notional on Deribit standard margin, so 3× uses nearly the whole account at the peak. The 5× calendar (%%AG5%% a year, %%AG5_DD%% worst drop) would need portfolio margin and accepts %%AG5_W%% weekends.</li>
 
     </ul>
+</section>
+
+<section aria-labelledby="ag-h">
+  <h2 id="ag-h">Saturday straddle: aggressive recovery and a hedge after a 3% move</h2>
+  <p>Same Saturday trade as below: sell the ATM straddle at 08:00 UTC expiring Sunday 08:00, 1× notional, real Deribit prices from Mar 2021. It is sold 1.5% below fair value with 0.03% fees per leg; hedge trades cost 0.05%. Chosen on 2021–23 and checked on 2024–26. "Max size" is the largest Saturday notional as a multiple of the account.</p>
+  <p><strong>Recovery rules tested.</strong> <em>Drawdown over K Saturdays</em>: while the account is below its high, the extra notional is the gap ÷ (K × premium as % of notional). K = 1 means one Saturday's premium on the extra wins back the entire gap. <em>Last loss</em>: only the previous Saturday's loss is recovered, not the whole gap. The cap limits total size. <strong>Trigger hedge.</strong> Checked on each hourly close. Once ETH is 3% or more from the strike, trade ETH-PERP equal to the straddle's delta at that moment: short after a fall, long after a rise. <em>Hold</em> keeps that hedge until an hour before expiry; <em>keep re-hedging</em> adjusts it every hour afterwards; <em>remove if back within 1.5%</em> closes it if ETH returns toward the strike.</p>
+
+  <h3>1. How aggressive can the recovery be? (Saturday only, no hedge)</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Recovery rule</th><th scope="col">2021–23: per year / worst drop</th><th scope="col">2024–26</th><th scope="col">Full period, per year</th><th scope="col">Worst drop</th><th scope="col">Sharpe</th><th scope="col">Worst Saturday</th><th scope="col">Max size</th><th scope="col">Resampled: worst-5% drop</th><th scope="col">Resampled: drop &gt; 50%</th></tr></thead>
+      <tbody>
+%%AG_REC_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Faster recovery and higher caps raise returns until a losing run lands while the size is already large. With no cap, the 2024 losing streak pushed the size to %%AGR_NOCAP_SIZE%% the account and the next loss erased it. Covering only the last loss is calmer than recovering the whole drawdown, but adds little.</p>
+
+  <h3>2. Delta hedge only after a move (Saturday only, no recovery)</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Hedge</th><th scope="col">2021–23: per year / worst drop</th><th scope="col">2024–26</th><th scope="col">Full period, per year</th><th scope="col">Worst drop</th><th scope="col">Sharpe</th><th scope="col">Worst Saturday</th><th scope="col">Max size</th><th scope="col">Resampled: worst-5% drop</th><th scope="col">Resampled: drop &gt; 50%</th></tr></thead>
+      <tbody>
+%%AG_HEDGE_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>On most Saturdays ETH never moves 3%, so the trade is untouched and keeps its full premium. On the days it does, a one-time hedge at that point limits the damage: the worst Saturday fell from %%AGH_PLAIN_WORST%% to %%AGH3_WORST%%. Holding the hedge works better than re-hedging. Once a 3% move has happened, re-hedging mostly pays for the moves back and forth. A 4% trigger did slightly better here (%%AGH4%% a year, Sharpe %%AGH4_SH%%); 3% gives more protection.</p>
+
+  <h3>3. Aggressive recovery with the 3% hedge (Saturday only)</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Combination</th><th scope="col">2021–23: per year / worst drop</th><th scope="col">2024–26</th><th scope="col">Full period, per year</th><th scope="col">Worst drop</th><th scope="col">Sharpe</th><th scope="col">Worst Saturday</th><th scope="col">Max size</th><th scope="col">Resampled: worst-5% drop</th><th scope="col">Resampled: drop &gt; 50%</th></tr></thead>
+      <tbody>
+%%AG_COMBO_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>On its own the Saturday sale still made little in 2024–26 (%%AGS_OOS%% a year for the 2-Saturday, 3× version). Aggressive recovery amplifies whatever the Saturday edge is doing, and that edge was weak in 2024 and 2026.</p>
+
+  <h3>4. The weekend calendar (sell Saturday + buy Sunday) with these on the Saturday leg</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Version</th><th scope="col">2021–23: per year / worst drop</th><th scope="col">2024–26</th><th scope="col">Full period, per year</th><th scope="col">Worst drop</th><th scope="col">Sharpe</th><th scope="col">Worst day</th><th scope="col">Max Saturday size</th><th scope="col">Resampled: worst-5% drop</th><th scope="col">Resampled: drop &gt; 50%</th></tr></thead>
+      <tbody>
+%%AG_CAL_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="legend" aria-hidden="true"><span><i class="key-line" style="background:var(--s1)"></i>Account value, $100k start (each panel has its own scale)</span></div>
+    <div class="chart" id="aggts" role="img" aria-label="Account value from 2021 for four versions of the Saturday strategy."></div>
+  </div>
+  <div class="two">
+    <div>
+      <h3>Calendar, 2-Saturday recovery cap 3× + 3% hedge, by year</h3>
+      <div class="scroll card">
+        <table>
+          <thead><tr><th scope="col">Year</th><th scope="col">Return</th><th scope="col">On %%SELL%%</th><th scope="col">Share of all trades sized up (Sundays never are)</th><th scope="col">Max size</th><th scope="col">Worst day</th></tr></thead>
+          <tbody>
+%%AG_YRS_CAL%%
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <h3>Its drawdowns</h3>
+      <div class="scroll card">
+        <table>
+          <thead><tr><th scope="col">Peak</th><th scope="col">Low point</th><th scope="col">Back to the peak</th><th scope="col">Depth</th><th scope="col">Weeks</th></tr></thead>
+          <tbody>
+%%AG_DD_ROWS%%
+          </tbody>
+        </table>
+      </div>
+      <p>Resampled over 2 years, its worst-5% annual return was %%AGC_B5%% and its worst-5% drop %%AGC_BDD5%%.</p>
+    </div>
+  </div>
+  <h3>Rules for the aggressive version</h3>
+  <ol class="steps">
+    <li><strong>Saturday 08:00 UTC:</strong> sell the ATM straddle expiring Sunday 08:00. Normal size is 1× the account. While below the previous high, add notional equal to the gap ÷ (2 × premium as % of notional), never above 3× the account.</li>
+    <li><strong>During Saturday:</strong> check ETH every hour. The first time it is 3% or more away from the strike, open a perp position equal to the straddle's delta at that moment (short if ETH fell, long if it rose). Hold it and close it about an hour before Sunday 08:00.</li>
+    <li><strong>Sunday 08:00 UTC:</strong> buy the ATM straddle expiring Monday 08:00 at 1× the account, with no recovery and no hedge.</li>
+    <li><strong>Margin:</strong> at 3× the Saturday short needs close to the whole account as initial margin on Deribit standard margin. Use portfolio margin or keep the cap at 2–2.5× if you want a buffer.</li>
+    <li><strong>Suggested stop rule (not simulated):</strong> if the account falls more than 35% from its high, drop to 1× with no recovery until it recovers. Resampling puts the worst-5% drop near that level.</li>
+  </ol>
 </section>
 
 <section aria-labelledby="sat-h">
@@ -1360,7 +1446,25 @@ function drawSatHist() {
     if (lo % 5 === 0) { const t = svgEl("text", { x: x, y: h - B + 16, "text-anchor": "middle" }, svg); t.textContent = (lo > 0 ? "+" : lo < 0 ? "−" : "") + Math.abs(lo) + "%"; }
   });
 }
-function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); drawSdTS(); drawPuTS(); drawLevTS(); drawWkTS(); drawSatTS(); drawSatHist(); }
+function drawAggTS() {
+  const S = D.aggr;
+  S.price = S.h;
+  const mk = (key, title, max) => ({ key, title, color: "var(--s1)", h: 100, dom: [0, max], ticks: [0, max / 2, max], fmt: v => "$" + v + "k" });
+  drawTS("aggts", S, [
+    mk("h", "Saturday only, 3% hedge, no recovery", 400),
+    mk("sa", "Saturday only, 2-Saturday recovery cap 3× + 3% hedge", 400),
+    mk("cg", "Calendar, gentle recovery + 3% hedge", 1000),
+    mk("ca", "Calendar, 2-Saturday recovery cap 3× + 3% hedge", 1400),
+  ], (tip, i) => {
+    tip.lastChild && tip.removeChild(tip.lastChild);
+    const f = v => "$" + v.toFixed(0) + "k";
+    tipRow(tip, "Sat, 3% hedge", f(S.h[i]));
+    tipRow(tip, "Sat, aggressive + hedge", f(S.sa[i]));
+    tipRow(tip, "Calendar, gentle + hedge", f(S.cg[i]));
+    tipRow(tip, "Calendar, aggressive + hedge", f(S.ca[i]));
+  });
+}
+function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); drawSdTS(); drawPuTS(); drawLevTS(); drawWkTS(); drawSatTS(); drawSatHist(); drawAggTS(); }
 drawAll();
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 120); });
 </script>

@@ -91,7 +91,9 @@ def bs(S, K, sig, T, kind):
 def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), wings=None, wing_skew=0.10,
              hedge=False, band=0.25, stop_h=2, recovery=False, rec_k=10, rec_cap=2.0, iv_mult=1.0, spread=None,
              start=None, end=None, cap0=100_000.0, side_by_dow=None, lev_buy=1.0, hedge_buy=None, buy_filter=None,
-             recovery_buy=False, rec_k_buy=4, rec_cap_buy=2.0, log=False):
+             recovery_buy=False, rec_k_buy=4, rec_cap_buy=2.0, log=False,
+             hedge_trigger=None, trigger_mode="dynamic", trigger_reset=None, trig_cost=0.0005,
+             rec_mode="dd", margin_cap=None):
     sel = np.ones(len(days), bool)
     if start:
         sel &= days.index >= start
@@ -102,6 +104,8 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
     hwm = cap0
     out_eq, out_ret, traded, sizes = [], [], 0, []
     trades = []
+    last_loss = 0.0
+    max_notional_x = 0.0
     worst = 0.0
     for i in range(len(d)):
         row = d.iloc[i]
@@ -176,14 +180,46 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
             rate = net / S0
             base = lev * eq
             notional = base
-            if recovery and eq < hwm and rate > 0:
-                notional = min(base + (hwm - eq) / (rec_k * rate), rec_cap * base)
+            if recovery and rate > 0:
+                gap = (hwm - eq) if rec_mode == "dd" else last_loss
+                if gap > 0:
+                    cap_ = np.inf if rec_cap is None else rec_cap * base
+                    notional = min(base + gap / (rec_k * rate), cap_)
+            if margin_cap is not None:                       # exchange margin: notional <= margin_cap x equity
+                notional = min(notional, margin_cap * eq)
+            max_notional_x = max(max_notional_x, notional / eq)
             n = notional / S0
             ST = path[-1]
             pay = abs(ST - S0)
             if wings:
                 pay -= max(kp - ST, 0) + max(ST - kc, 0)
             pnl = n * (net - pay)
+            if hedge_trigger is not None:
+                # delta hedge only once ETH has moved `hedge_trigger` from the strike (hourly closes)
+                hs = path[:24]
+                Th = (24 - np.arange(24)) / YEAR_H
+                _, dc = bs(hs, S0, iv, Th, "call")
+                _, dp = bs(hs, S0, iv, Th, "put")
+                targets = (dc + dp) * n                       # hedge for a short straddle
+                H, on = 0.0, False
+                for h in range(24):
+                    s = hs[h]
+                    mv = abs(s / S0 - 1)
+                    if h < 24 - stop_h:
+                        if not on and mv >= hedge_trigger:
+                            on = True
+                            pnl -= abs(targets[h] - H) * s * trig_cost
+                            H = targets[h]
+                        elif on and trigger_reset is not None and mv < hedge_trigger * trigger_reset:
+                            pnl -= abs(H) * s * trig_cost
+                            H, on = 0.0, False
+                        elif on and trigger_mode == "dynamic" and abs(targets[h] - H) > band * n:
+                            pnl -= abs(targets[h] - H) * s * trig_cost
+                            H = targets[h]
+                    elif H != 0.0:
+                        pnl -= abs(H) * s * trig_cost
+                        H = 0.0
+                    pnl += H * (path[h + 1] - s)
             if hedge:
                 hs = path[:24]
                 Th = (24 - np.arange(24)) / YEAR_H
@@ -208,6 +244,7 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
                     pnl += H * (path[h + 1] - s)
             traded += 1
             sizes.append(notional / base)
+            last_loss = max(-pnl, 0.0) if rec_mode == "last" else last_loss
             if log:
                 trades.append(dict(date=str(d.index[i].date()), dow=int(row["dow"]), side="sell", iv=float(iv), rv7=float(row["rv7"]),
                                    prem_rate=float(rate), move=float(abs(path[-1] / S0 - 1)), size_x=float(notional / base),
@@ -228,7 +265,7 @@ def simulate(days, paths, lev=1.0, maker=False, iv_filter=None, skip_dow=(), win
     sharpe = float(r.mean() / r.std() * np.sqrt(365)) if r.std() > 0 else 0.0
     res = dict(cagr=float(cagr * 100), maxdd=float(dd.min() * 100), sharpe=sharpe, worst_day=float(worst * 100),
                final=float(e.iloc[-1] / cap0), traded=traded, days=len(d), max_size=float(max(sizes) if sizes else 0),
-               yearly={int(k.year): float(v) for k, v in yearly.items()}, equity=e)
+               yearly={int(k.year): float(v) for k, v in yearly.items()}, equity=e, max_notional_x=float(max_notional_x))
     if log:
         res["trades"] = trades
     return res

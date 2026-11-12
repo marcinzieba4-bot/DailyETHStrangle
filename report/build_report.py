@@ -1123,6 +1123,86 @@ V["C3_DD"] = pct(c3["full"]["maxdd"], 0)
 V["C3_SH"] = f"{c3['full']['sharpe']:.2f}"
 V["C2_SH"] = f"{cb['Sell Sat + buy Sun']['full']['sharpe']:.2f}"
 
+# ---- version 15: aggressive recovery + hedge after 3% move ----
+AG = json.load(open(os.path.join(ROOT, "results", "sat_aggr.json")))
+def ag_row(name, r, boot=None, strong=False):
+    f_ = r["full"]
+    wiped = f_["final"] <= 0.05
+    nm = f"<strong>{html.escape(name)}</strong>" if strong else html.escape(name)
+    cells = (f"<td>{pct(r['IS']['cagr'], 0)} / {pct(r['IS']['maxdd'], 0)}</td>"
+             f"<td>{'wiped out' if r['OOS']['final'] <= 0.05 else pct(r['OOS']['cagr'], 1) + ' / ' + pct(r['OOS']['maxdd'], 0)}</td>"
+             f"<td class='{'pos' if f_['cagr'] > 0 else 'neg'}'><strong>{'wiped out' if wiped else pct(f_['cagr'], 1)}</strong></td>"
+             f"<td class='neg'>{'−100%' if wiped else pct(f_['maxdd'], 0)}</td><td>{f_['sharpe']:.2f}</td><td class='neg'>{pct(max(f_['worst_day'], -100), 1)}</td>"
+             f"<td>{f_['max_notional_x']:.1f}×</td>")
+    if boot is not None:
+        cells += (f"<td>{pct(boot['dd_p5'], 0)}</td><td>{boot['dd_gt50']*100:.0f}%</td>")
+    else:
+        cells += "<td>—</td><td>—</td>"
+    return f"<tr><th scope='row'>{nm}</th>{cells}</tr>"
+bmap = {"No recovery": "Sat: no recovery", "Gentle: drawdown over 8 Saturdays, cap 1.5×": "Sat: gentle recovery",
+        "Drawdown over 2 Saturdays, cap 3×": "Sat: drawdown over 2, cap 3×", "Drawdown in 1 Saturday, cap 3×": "Sat: drawdown in 1, cap 3×",
+        "Drawdown in 1 Saturday, cap 10×": "Sat: drawdown in 1, cap 10×", "Last loss in 1 Saturday, cap 3×": "Sat: last loss in 1, cap 3×"}
+V["AG_REC_ROWS"] = "\n".join(ag_row(k, v, AG["boot"].get(bmap.get(k, ""), None)) for k, v in AG["recovery"].items()
+                              if k not in ("Drawdown in 1 Saturday, no cap, margin limit 3×", "Last loss in 1 Saturday, no cap, margin limit 3×"))
+hmap = {"No hedge": "Sat: no recovery", "Hedge after 3% move, hold": "Sat: 3% hedge, no recovery"}
+V["AG_HEDGE_ROWS"] = "\n".join(ag_row(k, v, AG["boot"].get(hmap.get(k, ""), None), strong=(k == "Hedge after 3% move, hold")) for k, v in AG["hedge"].items())
+cmap = {"Drawdown over 2 Saturdays, cap 3× + 3% hedge": "Sat: drawdown over 2, cap 3× + 3% hedge"}
+V["AG_COMBO_ROWS"] = "\n".join(ag_row(k, v, AG["boot"].get(cmap.get(k, ""), None)) for k, v in AG["combo"].items()
+                                if k != "Drawdown in 1 Saturday, no cap, margin 3× + 3% hedge")
+calm = {"Calendar + gentle recovery + 3% hedge": "Calendar + gentle recovery + 3% hedge",
+        "Calendar + drawdown over 2 Sat, cap 3× + 3% hedge": "Calendar + drawdown over 2 Sat, cap 3× + 3% hedge"}
+cal_rows = [ag_row(k, v, AG["boot"].get(calm.get(k, ""), None), strong=(k == "Calendar + drawdown over 2 Sat, cap 3× + 3% hedge")) for k, v in AG["calendar"].items()]
+cal_rows.append(ag_row("Calendar + drawdown in 1 Sat, cap 5× + 3% hedge (needs more margin)", AG["cal_cap5"]))
+V["AG_CAL_ROWS"] = "\n".join(cal_rows)
+def ag_years(d_):
+    return "\n".join(f"<tr><th scope='row'>{y['year']}{' YTD' if y['year'] == 2026 else ''}</th><td class='{'pos' if y['ret'] > 0 else 'neg'}'><strong>{pct(y['ret'], 1)}</strong></td>"
+                     f"<td>{usd(y['usd'], True)}</td><td>{y['in_rec']*100:.0f}%</td><td>{y['size_max']:.1f}×</td><td class='neg'>{pct(y['worst'], 1)}</td></tr>" for y in d_["yearly"])
+V["AG_YRS_CAL"] = ag_years(AG["detail_cal_aggr"])
+V["AG_YRS_SAT"] = ag_years(AG["detail_aggr"])
+da, dh, dc, dca = AG["detail_aggr"], AG["detail_hedge"], AG["detail_cal"], AG["detail_cal_aggr"]
+V["AG_DD_ROWS"] = "\n".join(
+    f"<tr><th scope='row'>{pd.Timestamp(x['start']).strftime('%d %b %Y')}</th><td>{pd.Timestamp(x['trough']).strftime('%d %b %Y')}</td>"
+    f"<td>{pd.Timestamp(x['recovered']).strftime('%d %b %Y') if x['recovered'] else 'not yet'}</td><td class='neg'>{pct(x['depth'], 1)}</td><td>{x['weeks']:.0f}</td></tr>"
+    for x in dca["drawdowns"])
+hd = AG["hedge"]
+V["AGH_PLAIN_WORST"] = pct(hd["No hedge"]["full"]["worst_day"], 1)
+V["AGH3_WORST"] = pct(hd["Hedge after 3% move, hold"]["full"]["worst_day"], 1)
+V["AGH3"] = pct(hd["Hedge after 3% move, hold"]["full"]["cagr"], 1)
+V["AGH3_DD"] = pct(hd["Hedge after 3% move, hold"]["full"]["maxdd"], 0)
+V["AGH3_SH"] = f"{hd['Hedge after 3% move, hold']['full']['sharpe']:.2f}"
+V["AGH0_SH"] = f"{hd['No hedge']['full']['sharpe']:.2f}"
+V["AGH4"] = pct(hd["Hedge after 4% move, hold"]["full"]["cagr"], 1)
+V["AGH4_SH"] = f"{hd['Hedge after 4% move, hold']['full']['sharpe']:.2f}"
+V["AGHD"] = pct(hd["Hedge after 3% move, keep re-hedging"]["full"]["cagr"], 1)
+V["AGHALL"] = pct(hd["Hourly hedge all day (for reference)"]["full"]["cagr"], 1)
+rc = AG["recovery"]
+V["AGR_NOCAP_SIZE"] = f"{rc['Drawdown in 1 Saturday, no cap']['full']['max_notional_x']:.0f}×"
+V["AGR10"] = pct(rc["Drawdown in 1 Saturday, cap 10×"]["full"]["cagr"], 0)
+V["AGR10_DD"] = pct(rc["Drawdown in 1 Saturday, cap 10×"]["full"]["maxdd"], 0)
+V["AGR10_W"] = pct(rc["Drawdown in 1 Saturday, cap 10×"]["full"]["worst_day"], 0)
+V["AGR10_B50"] = f"{AG['boot']['Sat: drawdown in 1, cap 10×']['dd_gt50']*100:.0f}%"
+V["AGR10_B80"] = f"{AG['boot']['Sat: drawdown in 1, cap 10×']['ruin']*100:.0f}%"
+V["AGR5"] = pct(rc["Drawdown in 1 Saturday, cap 5×"]["full"]["cagr"], 0)
+V["AGR5_DD"] = pct(rc["Drawdown in 1 Saturday, cap 5×"]["full"]["maxdd"], 0)
+V["AGR5_W"] = pct(rc["Drawdown in 1 Saturday, cap 5×"]["full"]["worst_day"], 0)
+V["AGR23"] = pct(rc["Drawdown over 2 Saturdays, cap 3×"]["full"]["cagr"], 1)
+V["AGR23_DD"] = pct(rc["Drawdown over 2 Saturdays, cap 3×"]["full"]["maxdd"], 0)
+V["AGR23_OOS"] = pct(rc["Drawdown over 2 Saturdays, cap 3×"]["OOS"]["cagr"], 1)
+V["AGC"] = pct(AG["calendar"]["Calendar + drawdown over 2 Sat, cap 3× + 3% hedge"]["full"]["cagr"], 0)
+V["AGC_DD"] = pct(AG["calendar"]["Calendar + drawdown over 2 Sat, cap 3× + 3% hedge"]["full"]["maxdd"], 0)
+V["AGC_OOS"] = pct(AG["calendar"]["Calendar + drawdown over 2 Sat, cap 3× + 3% hedge"]["OOS"]["cagr"], 0)
+V["AGC_OOS_DD"] = pct(AG["calendar"]["Calendar + drawdown over 2 Sat, cap 3× + 3% hedge"]["OOS"]["maxdd"], 0)
+V["AGC_FINAL"] = usd(dca["final_usd"])
+V["AGC_B5"] = pct(AG["boot"]["Calendar + drawdown over 2 Sat, cap 3× + 3% hedge"]["cagr_p5"], 0)
+V["AGC_BDD5"] = pct(AG["boot"]["Calendar + drawdown over 2 Sat, cap 3× + 3% hedge"]["dd_p5"], 0)
+V["AGG"] = pct(AG["calendar"]["Calendar + gentle recovery + 3% hedge"]["full"]["cagr"], 0)
+V["AGG_DD"] = pct(AG["calendar"]["Calendar + gentle recovery + 3% hedge"]["full"]["maxdd"], 0)
+V["AGG_SH"] = f"{AG['calendar']['Calendar + gentle recovery + 3% hedge']['full']['sharpe']:.2f}"
+V["AG5"] = pct(AG["cal_cap5"]["full"]["cagr"], 0)
+V["AG5_DD"] = pct(AG["cal_cap5"]["full"]["maxdd"], 0)
+V["AG5_W"] = pct(AG["cal_cap5"]["full"]["worst_day"], 0)
+V["AGS_OOS"] = pct(AG["combo"]["Drawdown over 2 Saturdays, cap 3× + 3% hedge"]["OOS"]["cagr"], 1)
+
 # ---- chart data ----
 data = dict(
     strip=strip,
@@ -1138,6 +1218,7 @@ data = dict(
              B=PU["windows_long"]["0.22|B"]["series"]["pnl"], dd=PU["windows_long"]["0.22|plain"]["series"]["dd"],
              szB=PU["windows_long"]["0.22|B"]["series"]["max_size"], hodl=PU["windows_long"]["0.22|plain"]["series"]["hodl"]),
     wk=dict(date=WS["dates"], simple=WS["series_simple"], rec8=WS["series_rec8"]),
+    aggr=dict(date=dh["dates"], h=dh["series"], sa=da["series"], cg=dc["series"], ca=dca["series"]),
     satmon=dict(date=sr_["dates"], sp=sp_["series"], sr=sr_["series"], mp=mp_["series"], mr=mr_["series"]),
     sathist=dict(plain=sp_["hist"], rec=sr_["hist"]),
     sdl=dict(date=SD["windows"]["0.44|plain"]["series"]["start"], price=SD["windows"]["0.44|plain"]["series"]["s0"],
