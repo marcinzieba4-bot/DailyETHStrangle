@@ -71,6 +71,15 @@ Each year sell a 1-year ATM call on 50 ETH for 26% of spot, cash-settle at expir
   holding value; 2020 starts −83%.
 * Today the longest Deribit call (Sep 2027) pays 19.5% of spot (IV ~54%), so a full year is ~21–22%, not 26%.
 
+## Monthly ladder of yearly calls (`run_ladder.py`)
+
+Every month sell a 1-year ATM call on 50/12 ETH; ITM losses paid in cash, ETH never sold; open calls bought back at the end.
+
+* Nov 2022 → Nov 2026: +$12.0k vs holding at 26% premium (yearly all-at-once: +$22.6k), −$14.4k at 20%.
+  Most cash ever needed: $12.5k (yearly: $62k).
+* All 4-year windows since 2020: beats holding 44% at 26% (yearly 42%), 11% at 20% (yearly 21%);
+  narrower range (worst 10%: −69% vs −94%). ~62% of 1-year ATM calls ended in the money.
+
 ## Layout
 
 ```
@@ -82,6 +91,7 @@ run_accumulate.py  dip-buying plan     -> results/accumulate.json
 run_range.py       1 ETH/day + floor   -> results/range.json
 run_weekly.py      weekly calls        -> results/weekly.json
 run_annual.py      yearly calls        -> results/annual.json
+run_ladder.py      monthly ladder      -> results/ladder.json
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
 ```
@@ -95,6 +105,7 @@ python3 run_accumulate.py        # dip-buying plan
 python3 run_range.py             # 1 ETH/day with the 50 wstETH floor
 python3 run_weekly.py            # weekly covered calls, 2 ETH a week
 python3 run_annual.py            # yearly ATM calls on 50 ETH, last 4 years + all 4-year windows
+python3 run_ladder.py            # monthly ladder of yearly calls
 python3 report/build_report.py   # rebuild results/report.html
 ```
 

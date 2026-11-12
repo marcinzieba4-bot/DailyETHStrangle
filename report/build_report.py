@@ -593,12 +593,62 @@ V["AN_CASH_MED"] = f"{-w26['min_cash_pct_median']:.0f}%"
 V["AN20_BEAT"] = f"{AN['windows']['0.2']['beat_hodl']*100:.0f}%"
 V["AN_ITM3"] = f"{w26['itm_years_dist'].get('3', w26['itm_years_dist'].get(3, 0))*100:.0f}%"
 
+# ---- version 6: monthly ladder of yearly calls ----
+LD = json.load(open(os.path.join(ROOT, "results", "ladder.json")))
+LL = LD["last4"]
+l26, l20 = LL["0.26"], LL["0.2"]
+lrows = []
+for y in range(4):
+    b26, b20 = l26["by_year"][y], l20["by_year"][y]
+    n26, n20 = b26["premium"] - b26["payout"], b20["premium"] - b20["payout"]
+    lrows.append(f"<tr><th scope='row'>Year {y+1} ({pd.Timestamp(LL['dates'][0]).year + y}–{str(pd.Timestamp(LL['dates'][0]).year + y + 1)[2:]})</th>"
+                 f"<td class='pos'>{usd(b26['premium'], True)}</td><td class='{'neg' if b26['payout'] > 0 else ''}'>{usd(-b26['payout'], True) if b26['payout'] > 0 else '$0'}</td>"
+                 f"<td class='{'pos' if n26 > 0 else 'neg'}'><strong>{usd(n26, True)}</strong></td>"
+                 f"<td class='{'pos' if n20 > 0 else 'neg'}'>{usd(n20, True)}</td></tr>")
+lrows.append(f"<tr><th scope='row'>Buy back the {48 - l26['n_exp']} calls still open</th><td></td><td class='neg'>{usd(-l26['open_mtm'], True)}</td>"
+             f"<td class='neg'><strong>{usd(-l26['open_mtm'], True)}</strong></td><td class='neg'>{usd(-l20['open_mtm'], True)}</td></tr>")
+lrows.append(f"<tr><th scope='row'><strong>Result vs holding 50 ETH</strong></th><td></td><td></td>"
+             f"<td class='{'pos' if l26['diff'] > 0 else 'neg'}'><strong>{usd(l26['diff'], True)} ({pct(l26['diff']/LL['hodl']*100, 0)})</strong></td>"
+             f"<td class='{'pos' if l20['diff'] > 0 else 'neg'}'><strong>{usd(l20['diff'], True)} ({pct(l20['diff']/LL['hodl']*100, 0)})</strong></td></tr>")
+lrows.append(f"<tr><th scope='row'>Same years, one yearly call on all 50 ETH</th><td></td><td></td>"
+             f"<td>{usd(l26['annual_diff'], True)}</td><td>{usd(l20['annual_diff'], True)}</td></tr>")
+lrows.append(f"<tr><th scope='row'>Most cash ever needed: ladder / yearly</th><td></td><td></td>"
+             f"<td>{usd(-l26['min_cash'])} / {usd(-l26['annual_min_cash'])}</td><td>{usd(-l20['min_cash'])} / {usd(-l20['annual_min_cash'])}</td></tr>")
+V["LD_ROWS"] = "\n".join(lrows)
+wrows = []
+for key, lab in [("0.26", "26%"), ("0.2", "20%")]:
+    w = LD["windows"][key]
+    for kind, klab in [("lad", "monthly ladder"), ("ann", "yearly, all at once")]:
+        x = w[kind]
+        by = x["by_year"]
+        wrows.append(f"<tr><th scope='row'>{lab}, {klab}</th><td>{x['beat']*100:.0f}%</td><td>{pct(x['median'], 0)}</td>"
+                     f"<td class='neg'>{pct(x['p10'], 0)}</td><td>{pct(x['p90'], 0)}</td><td class='neg'>{pct(x['worst'], 0)}</td>"
+                     f"<td>{pct(by.get('2020', 0), 0)} / {pct(by.get('2021', 0), 0)} / {pct(by.get('2022', 0), 0)}</td></tr>")
+V["LD_WIN_ROWS"] = "\n".join(wrows)
+V["LD_DIFF"] = usd(l26["diff"], True)
+V["LD_DIFF_PCT"] = pct(l26["diff"] / LL["hodl"] * 100, 0)
+V["LD20_DIFF"] = usd(l20["diff"], True)
+V["LD_CASH"] = usd(-l26["min_cash"])
+V["LD_OPEN"] = usd(l26["open_mtm"])
+V["LD_ITM"] = f"{int(l26['n_itm'])} of {int(l26['n_exp'])}"
+w26l, w20l = LD["windows"]["0.26"]["lad"], LD["windows"]["0.2"]["lad"]
+V["LD_BEAT"] = f"{w26l['beat']*100:.0f}%"
+V["LD20_BEAT"] = f"{w20l['beat']*100:.0f}%"
+V["LD_P10"] = pct(w26l["p10"], 0)
+V["LD_ANN_P10"] = pct(LD["windows"]["0.26"]["ann"]["p10"], 0)
+V["LD_P90"] = pct(w26l["p90"], 0)
+V["LD_ANN_P90"] = pct(LD["windows"]["0.26"]["ann"]["p90"], 0)
+V["LD_ITM_SHARE"] = f"{LD['windows']['0.26']['lad_itm_share_med']*100:.0f}%"
+
 # ---- chart data ----
 data = dict(
     strip=strip,
     ts=dict(date=ts["date"].tolist(), price=[round(x, 2) for x in ts["price"]],
             A=[round(x, 2) for x in ts["A. Call-only exit"]], B=[round(x, 2) for x in ts["B. Your plan, adds up to 2x"]],
             dA=ts["A. Call-only exit|days"].tolist(), dB=ts["B. Your plan, adds up to 2x|days"].tolist()),
+    lad=dict(date=LD["windows"]["0.26"]["series"]["start"], price=LD["windows"]["0.26"]["series"]["s0"],
+             lad=LD["windows"]["0.26"]["series"]["lad"], ann=LD["windows"]["0.26"]["series"]["ann"],
+             lad20=LD["windows"]["0.2"]["series"]["lad"], send=LD["windows"]["0.26"]["series"]["s_end"]),
     ann=dict(date=AN["windows"]["0.26"]["series"]["start"], price=AN["windows"]["0.26"]["series"]["s0"],
              d26=AN["windows"]["0.26"]["series"]["diff_pct_hodl"], d20=AN["windows"]["0.2"]["series"]["diff_pct_hodl"],
              itm=AN["windows"]["0.26"]["series"]["itm_years"], send=AN["windows"]["0.26"]["series"]["s_end"]),

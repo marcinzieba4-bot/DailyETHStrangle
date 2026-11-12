@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of %%ASOF%%</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest idea first: hold 50 ETH untouched and, once a year, sell a 1-year ATM call on 50 ETH for 26% of the price. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
+  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest idea first: hold 50 ETH untouched and every month sell a 1-year ATM call on 1/12 of it (about 4.17 ETH), so that after a year 12 overlapping calls are always open. Before that comes selling one yearly call on all 50 ETH. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>%%ETH%%</b></span>
     <span>Daily ATM IV <b>%%DAILY_IV%%%</b></span>
@@ -138,14 +138,50 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: the last 4 years were a lucky window for yearly calls</h2>
+  <h2 id="v-h">Bottom line: laddering monthly smooths the ride but does not change the answer</h2>
   <ul>
+    <li><strong>Monthly ladder, last 4 years: %%LD_DIFF%% (%%LD_DIFF_PCT%%) against holding at a 26% premium, %%LD20_DIFF%% at 20%.</strong> One yearly call on all 50 ETH made more over the same years, but by Nov 2024 it was down $62k; the ladder was never down more than %%LD_CASH%%.</li>
+    <li><strong>Across every 4-year window since 2020 the ladder beat holding %%LD_BEAT%% of the time at 26%, and %%LD20_BEAT%% at 20%.</strong> It narrows the range (worst 10%: %%LD_P10%% vs %%LD_ANN_P10%% for yearly; best 10%: %%LD_P90%% vs %%LD_ANN_P90%%). But a 1-year ATM call on ETH ended in the money about %%LD_ITM_SHARE%% of the time, so selling the upside has mostly cost money.</li>
     <li><strong>Nov 2022 to today it worked.</strong> Holding 50 ETH went from %%AN_START_PX%% to %%AN_END_PX%% per ETH and ends at %%AN_HODL%%. Selling a 1-year ATM call every November for 26% ends at %%AN_FINAL%%, which is %%AN_DIFF%% (%%AN_DIFF_PCT%%) more. On your 62.45 ETH that is about %%AN_SCALE_DIFF%%.</li>
     <li><strong>But it was underwater for three years.</strong> The first two years ETH rallied past the strike. By Nov 2024 you had paid %%AN_MINCASH%% more in call losses than you had collected. The last two years (flat, then down) paid it all back. With Deribit's ETH-settled options your balance would have dropped to %%AN_ETH_MIN%% ETH before recovering to %%AN_ETH_FINAL%%.</li>
     <li><strong>Over every 4-year window since 2020 it beat holding only %%AN_BEAT%% of the time.</strong> The median was %%AN_MED%% of the holding value. Windows starting in 2020 lost %%AN_2020%%, because one big bull year wipes out years of premium; 2022 starts gained %%AN_2022%%.</li>
     <li><strong>26% is generous today.</strong> Deribit's longest call (Sep 2027) pays 19.5% of spot at 54% vol, so a full year is about 21–22%. At 20% the last 4 years end %%AN20_DIFF%% against holding, and only %%AN20_BEAT%% of 4-year windows beat holding.</li>
     <li><strong>Weekly calls on 2 ETH are too slow to exit</strong> unless the strike never goes below $2,000 and the size is larger. Details below.</li>
   </ul>
+</section>
+
+<section aria-labelledby="ld-h">
+  <h2 id="ld-h">Monthly ladder of yearly calls on 50 ETH</h2>
+  <p>Every month on the 12th, sell a 1-year ATM call on 4.17 ETH (50 ÷ 12). In the first year coverage builds from 1/12 to 12/12. From then on, each month one call expires and a new one is sold at the current price. If the expiring call ended in the money, you pay the difference in cash and keep the ETH. If it ended out of the money, you keep the whole premium. The ETH is never sold. Calls still open at the end are bought back at their value that day; that is the fair cost of stopping. Their value is priced with the volatility the premium implies: 66% for 26%, 51% for 20%.</p>
+  <h3>The last 4 years (Nov 2022 → Nov 2026)</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Period</th><th scope="col">Premiums in (26%)</th><th scope="col">Paid on expiring calls (26%)</th><th scope="col">Net, 26% premium</th><th scope="col">Net, 20% premium</th></tr></thead>
+      <tbody>
+%%LD_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>%%LD_ITM%% of the expired calls ended in the money. Year 1 has no payouts because nothing expires until month 13. Year 2 is when the 2023–24 rally comes due. The %%LD_OPEN%% buy-back covers the 11 calls sold between Dec 2025 and Oct 2026 that are still open.</p>
+
+  <h3>Every 4-year window since February 2020</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Premium and method</th><th scope="col">Beats holding</th><th scope="col">Median</th><th scope="col">Worst 10%</th><th scope="col">Best 10%</th><th scope="col">Worst</th><th scope="col">Median by start year: 2020 / 2021 / 2022</th></tr></thead>
+      <tbody>
+%%LD_WIN_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="legend" aria-hidden="true">
+      <span><i class="key-line" style="background:var(--ink-2)"></i>ETH price at start</span>
+      <span><i class="key-line" style="background:var(--s1)"></i>Monthly ladder, 26%</span>
+      <span><i class="key-line" style="background:var(--s2)"></i>Yearly, all at once, 26%</span>
+    </div>
+    <div class="chart" id="ladts" role="img" aria-label="ETH price at start and the 4-year result versus holding for the monthly ladder and the yearly call, by start date."></div>
+  </div>
+  <p class="note">Results are % of the holding value at the end of each 4-year window. Windows start on every day from Feb 2020 to Nov 2022. "Monthly" means every 30.4 days in this test.</p>
 </section>
 
 <section aria-labelledby="an-h">
@@ -760,7 +796,20 @@ function drawAnnTS() {
     tipRow(tip, "Years in the money", String(S.itm[i]) + " of 4");
   });
 }
-function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); }
+function drawLadTS() {
+  const S = D.lad;
+  drawTS("ladts", S, [
+    pricePanel(),
+    { key: "lad", title: "Monthly ladder, 26%: 4-year result vs holding", h: 140, dom: [-150, 100], ticks: [-150, -100, -50, 0, 50, 100], fmt: pctFmt, color: "var(--s1)" },
+    { key: "ann", title: "Yearly call on all 50 ETH, 26%: 4-year result vs holding", h: 140, dom: [-150, 100], ticks: [-150, -100, -50, 0, 50, 100], fmt: pctFmt, color: "var(--s2)" },
+  ], (tip, i) => {
+    tipRow(tip, "ETH 4 years later", "$" + Math.round(S.send[i]).toLocaleString("en-US"));
+    tipRow(tip, "Ladder, 26%", fp(S.lad[i], 0), "var(--s1)");
+    tipRow(tip, "Yearly, 26%", fp(S.ann[i], 0), "var(--s2)");
+    tipRow(tip, "Ladder, 20%", fp(S.lad20[i], 0));
+  });
+}
+function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); }
 drawAll();
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 120); });
 </script>
