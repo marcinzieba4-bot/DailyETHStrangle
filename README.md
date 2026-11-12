@@ -80,6 +80,15 @@ Every month sell a 1-year ATM call on 50/12 ETH; ITM losses paid in cash, ETH ne
 * All 4-year windows since 2020: beats holding 44% at 26% (yearly 42%), 11% at 20% (yearly 21%);
   narrower range (worst 10%: −69% vs −94%). ~62% of 1-year ATM calls ended in the money.
 
+## Yearly straddles instead of ETH, laddered monthly, recovery sizing (`run_straddle.py`)
+
+No ETH held; every month sell a 1-year ATM straddle on 50/12 ETH (44% premium). After a losing tranche the next is
+sized up: rule A = half of the new premium equals the loss (min 1×); rule B = base + extra tranche whose half-premium covers it.
+
+* Nov 2022 → Nov 2026: plain +$11.3k, A +$13.0k, B +$35.0k (holding 50 ETH: +$39.2k); cash needed at worst $73–87k.
+* All 4-year windows since 2020: made money 29% (plain), 28% (A), 33% (B); largest tranche median 4.6× (A) / 6.2× (B), up to 28×.
+* ETH moved more than 44% over a year on 59% of start days since 2020. At 50% premium: 56% of windows profitable; at 38%: 0%.
+
 ## Layout
 
 ```
@@ -92,6 +101,7 @@ run_range.py       1 ETH/day + floor   -> results/range.json
 run_weekly.py      weekly calls        -> results/weekly.json
 run_annual.py      yearly calls        -> results/annual.json
 run_ladder.py      monthly ladder      -> results/ladder.json
+run_straddle.py    yearly straddles    -> results/straddle.json
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
 ```
@@ -106,6 +116,7 @@ python3 run_range.py             # 1 ETH/day with the 50 wstETH floor
 python3 run_weekly.py            # weekly covered calls, 2 ETH a week
 python3 run_annual.py            # yearly ATM calls on 50 ETH, last 4 years + all 4-year windows
 python3 run_ladder.py            # monthly ladder of yearly calls
+python3 run_straddle.py          # laddered yearly straddles with recovery sizing
 python3 report/build_report.py   # rebuild results/report.html
 ```
 

@@ -640,12 +640,68 @@ V["LD_P90"] = pct(w26l["p90"], 0)
 V["LD_ANN_P90"] = pct(LD["windows"]["0.26"]["ann"]["p90"], 0)
 V["LD_ITM_SHARE"] = f"{LD['windows']['0.26']['lad_itm_share_med']*100:.0f}%"
 
+# ---- version 7: laddered yearly straddles, no ETH, recovery sizing ----
+SD = json.load(open(os.path.join(ROOT, "results", "straddle.json")))
+SL = SD["last4"]
+RULE_LAB = {"plain": "No recovery sizing", "A": "Rule A: half of new premium = last loss", "B": "Rule B: base + extra tranche"}
+srows, wrows2 = [], []
+for prem in ["0.44", "0.5", "0.38"]:
+    for rule in ["plain", "A", "B"]:
+        r = SL[f"{prem}|{rule}"]
+        srows.append(f"<tr><th scope='row'>{float(prem):.0%} · {RULE_LAB[rule]}</th>"
+                     f"<td class='{'pos' if r['final'] > 0 else 'neg'}'><strong>{usd(r['final'], True)}</strong></td>"
+                     f"<td class='neg'>{usd(-r['min_equity'])}</td><td>{r['max_size']:.1f}×</td><td>{int(r['n_loss'])} of {int(r['n_exp'])}</td></tr>")
+        w = SD["windows"][f"{prem}|{rule}"]
+        by = w["by_year"]
+        wrows2.append(f"<tr><th scope='row'>{float(prem):.0%} · {RULE_LAB[rule]}</th><td>{w['profit']*100:.0f}%</td>"
+                      f"<td>{pct(w['median'], 0)}</td><td class='neg'>{pct(w['p10'], 0)}</td><td>{pct(w['p90'], 0)}</td>"
+                      f"<td>{w['size_median']:.1f}× / {w['size_p90']:.0f}×</td><td class='neg'>{-w['dd_median']:.0f}%</td>"
+                      f"<td>{pct(by.get('2020', 0), 0)} / {pct(by.get('2021', 0), 0)} / {pct(by.get('2022', 0), 0)}</td></tr>")
+V["SD_ROWS"] = "\n".join(srows)
+V["SD_WIN_ROWS"] = "\n".join(wrows2)
+V["SD_HODL"] = usd(SL["hodl_change"], True)
+V["SD_NOTIONAL"] = usd(SL["start_value"])
+V["SD_PLAIN"] = usd(SL["0.44|plain"]["final"], True)
+V["SD_A"] = usd(SL["0.44|A"]["final"], True)
+V["SD_B"] = usd(SL["0.44|B"]["final"], True)
+V["SD_DD_A"] = usd(-SL["0.44|A"]["min_equity"])
+V["SD_DD_B"] = usd(-SL["0.44|B"]["min_equity"])
+V["SD_LOSS"] = f"{int(SL['0.44|plain']['n_loss'])} of {int(SL['0.44|plain']['n_exp'])}"
+wp, wa, wb = (SD["windows"][f"0.44|{r}"] for r in ("plain", "A", "B"))
+V["SD_W_PLAIN"] = f"{wp['profit']*100:.0f}%"
+V["SD_W_A"] = f"{wa['profit']*100:.0f}%"
+V["SD_W_B"] = f"{wb['profit']*100:.0f}%"
+V["SD_W_A_MED"] = pct(wa["median"], 0)
+V["SD_W_PLAIN_MED"] = pct(wp["median"], 0)
+V["SD_SIZE_A"] = f"{wa['size_median']:.1f}×"
+V["SD_SIZE_B"] = f"{wb['size_median']:.1f}×"
+V["SD_SIZE_MAX"] = f"{max(wa['size_max'], wb['size_max']):.0f}×"
+V["SD_W50"] = f"{SD['windows']['0.5|plain']['profit']*100:.0f}%"
+V["SD_W38"] = f"{SD['windows']['0.38|plain']['profit']*100:.0f}%"
+V["SD_DD_MED"] = f"{-wp['dd_median']:.0f}%"
+_mv = pr_all.to_numpy()
+_m1 = np.abs(_mv[365:] / _mv[:-365] - 1)
+_d1 = pd.Series(_m1, index=pr_all.index[:-365])
+V["MV44"] = f"{np.mean(_m1 > 0.44)*100:.0f}%"
+V["MV44_21"] = f"{np.mean(_d1['2021':] > 0.44)*100:.0f}%"
+V["MV_MED"] = f"{np.median(_m1)*100:.0f}%"
+mvrows = []
+for y in ["2020", "2021", "2022", "2023", "2024", "2025"]:
+    x = _d1[y]
+    if len(x):
+        mvrows.append(f"<tr><th scope='row'>{y}</th><td>{np.median(x)*100:.0f}%</td><td>{np.mean(x > 0.44)*100:.0f}%</td></tr>")
+V["MV_ROWS"] = "\n".join(mvrows)
+
 # ---- chart data ----
 data = dict(
     strip=strip,
     ts=dict(date=ts["date"].tolist(), price=[round(x, 2) for x in ts["price"]],
             A=[round(x, 2) for x in ts["A. Call-only exit"]], B=[round(x, 2) for x in ts["B. Your plan, adds up to 2x"]],
             dA=ts["A. Call-only exit|days"].tolist(), dB=ts["B. Your plan, adds up to 2x|days"].tolist()),
+    sdl=dict(date=SD["windows"]["0.44|plain"]["series"]["start"], price=SD["windows"]["0.44|plain"]["series"]["s0"],
+             plain=SD["windows"]["0.44|plain"]["series"]["pnl"], A=SD["windows"]["0.44|A"]["series"]["pnl"],
+             B=SD["windows"]["0.44|B"]["series"]["pnl"], szA=SD["windows"]["0.44|A"]["series"]["max_size"],
+             szB=SD["windows"]["0.44|B"]["series"]["max_size"], send=SD["windows"]["0.44|plain"]["series"]["s_end"]),
     lad=dict(date=LD["windows"]["0.26"]["series"]["start"], price=LD["windows"]["0.26"]["series"]["s0"],
              lad=LD["windows"]["0.26"]["series"]["lad"], ann=LD["windows"]["0.26"]["series"]["ann"],
              lad20=LD["windows"]["0.2"]["series"]["lad"], send=LD["windows"]["0.26"]["series"]["s_end"]),

@@ -127,7 +127,7 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 <header>
   <div class="eyebrow">ETH exit study · Deribit data as of %%ASOF%%</div>
   <h1>Sell 50 wstETH today, or exit through daily options?</h1>
-  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest idea first: hold 50 ETH untouched and every month sell a 1-year ATM call on 1/12 of it (about 4.17 ETH), so that after a year 12 overlapping calls are always open. Before that comes selling one yearly call on all 50 ETH. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
+  <p class="lede">You hold 50 wstETH, which is %%Q0%% ETH at today's on-chain rate of %%RATIO%%. At ETH %%ETH%% that is %%POS%%. Selling now nets about <strong>%%SELL%%</strong>. This page tests your latest idea first: sell the ETH, then every month sell a 1-year ATM straddle (put + call) on 1/12 of 50 ETH. After a losing tranche, the next one is sized up so its premium recovers the loss. After that come covered-call ladders on 50 ETH you keep. Earlier ideas follow below it: weekly calls on 2 ETH, 1 ETH a day of puts and calls, and quick exits.</p>
   <div class="facts">
     <span>ETH index <b>%%ETH%%</b></span>
     <span>Daily ATM IV <b>%%DAILY_IV%%%</b></span>
@@ -138,16 +138,69 @@ footer code, p code, li code { font-family: var(--font-mono); font-size: 0.92em;
 </header>
 
 <section class="verdict" aria-labelledby="v-h">
-  <h2 id="v-h">Bottom line: laddering monthly smooths the ride but does not change the answer</h2>
+  <h2 id="v-h">Bottom line: short yearly straddles on ETH have lost more often than they won, and recovery sizing makes the bad years much worse</h2>
   <ul>
-    <li><strong>Monthly ladder, last 4 years: %%LD_DIFF%% (%%LD_DIFF_PCT%%) against holding at a 26% premium, %%LD20_DIFF%% at 20%.</strong> One yearly call on all 50 ETH made more over the same years, but by Nov 2024 it was down $62k; the ladder was never down more than %%LD_CASH%%.</li>
-    <li><strong>Across every 4-year window since 2020 the ladder beat holding %%LD_BEAT%% of the time at 26%, and %%LD20_BEAT%% at 20%.</strong> It narrows the range (worst 10%: %%LD_P10%% vs %%LD_ANN_P10%% for yearly; best 10%: %%LD_P90%% vs %%LD_ANN_P90%%). But a 1-year ATM call on ETH ended in the money about %%LD_ITM_SHARE%% of the time, so selling the upside has mostly cost money.</li>
-    <li><strong>Nov 2022 to today it worked.</strong> Holding 50 ETH went from %%AN_START_PX%% to %%AN_END_PX%% per ETH and ends at %%AN_HODL%%. Selling a 1-year ATM call every November for 26% ends at %%AN_FINAL%%, which is %%AN_DIFF%% (%%AN_DIFF_PCT%%) more. On your 62.45 ETH that is about %%AN_SCALE_DIFF%%.</li>
-    <li><strong>But it was underwater for three years.</strong> The first two years ETH rallied past the strike. By Nov 2024 you had paid %%AN_MINCASH%% more in call losses than you had collected. The last two years (flat, then down) paid it all back. With Deribit's ETH-settled options your balance would have dropped to %%AN_ETH_MIN%% ETH before recovering to %%AN_ETH_FINAL%%.</li>
-    <li><strong>Over every 4-year window since 2020 it beat holding only %%AN_BEAT%% of the time.</strong> The median was %%AN_MED%% of the holding value. Windows starting in 2020 lost %%AN_2020%%, because one big bull year wipes out years of premium; 2022 starts gained %%AN_2022%%.</li>
-    <li><strong>26% is generous today.</strong> Deribit's longest call (Sep 2027) pays 19.5% of spot at 54% vol, so a full year is about 21–22%. At 20% the last 4 years end %%AN20_DIFF%% against holding, and only %%AN20_BEAT%% of 4-year windows beat holding.</li>
-    <li><strong>Weekly calls on 2 ETH are too slow to exit</strong> unless the strike never goes below $2,000 and the size is larger. Details below.</li>
+    <li><strong>The last 4 years would have worked: %%SD_PLAIN%% with plain monthly straddles, %%SD_A%% with rule A, %%SD_B%% with rule B</strong> (44% premium, base 50 ETH = %%SD_NOTIONAL%% at the start). But simply holding 50 ETH made %%SD_HODL%% over the same period. At the worst point, in late 2024, you needed %%SD_DD_A%% (rule A) to %%SD_DD_B%% (rule B) of cash to stay in.</li>
+    <li><strong>Across every 4-year window since 2020, plain straddles made money %%SD_W_PLAIN%% of the time.</strong> Rule A made money %%SD_W_A%% of the time and rule B %%SD_W_B%%, with a median of %%SD_W_A_MED%% for rule A against %%SD_W_PLAIN_MED%% plain. ETH moved more than 44% over a year on %%MV44%% of start days since 2020 (%%MV44_21%% since 2021), and its median 1-year move was %%MV_MED%%.</li>
+    <li><strong>The recovery rule is a martingale.</strong> In trending years it keeps adding size: the largest tranche was a median %%SD_SIZE_A%% the base size with rule A and %%SD_SIZE_B%% with rule B, and up to %%SD_SIZE_MAX%% in 2020–21. It helps when a calm year follows a loss, as in 2024–26, and turns a bad run into a wipe-out when it does not.</li>
+    <li><strong>The premium level decides everything.</strong> At 50% (implied vol 64%) plain straddles made money in %%SD_W50%% of windows. At 38% (implied vol 48%), %%SD_W38%%. Today's 1-year ATM straddle is about 43%.</li>
+    <li><strong>Covered-call ladders on ETH you keep (previous question):</strong> +$12k over the last 4 years at a 26% premium. They beat holding in 44% of 4-year windows at 26%, and 11% at 20%.</li>
+
+    </ul>
+</section>
+
+<section aria-labelledby="sd-h">
+  <h2 id="sd-h">Yearly straddles instead of ETH, laddered monthly, with recovery sizing</h2>
+  <p>No ETH is held. Every month, sell a 1-year ATM put and call (a straddle) on 4.17 ETH (50 ÷ 12) and collect 44% of the price for both legs, less fees. When a tranche expires, pay size × |price − strike| in cash and sell a new 1-year straddle at the current price. Your rule for the size after a losing tranche (loss = payout − premium) can be read two ways, so both are tested:</p>
+  <ul class="steps" style="list-style:disc">
+    <li><strong>Rule A:</strong> the new tranche is sized so that half of its premium equals the loss, never smaller than the base. In your example (move 60%, premium 44%, loss 16%), half of a normal tranche's premium (22%) already covers 16%, so the size stays 1×. It grows only for moves above about 66%.</li>
+    <li><strong>Rule B:</strong> keep the base tranche and add an extra one whose half-premium covers the loss. In your example that is 1 + 16/22 = 1.73×.</li>
   </ul>
+  <p>Open straddles are valued each month at the implied volatility the premium implies (44% → 56%). The lowest point of cash minus that value is the money you would need to keep the position open. Results are in USD for the last 4 years, and in % of the starting notional (50 ETH × the price at the start) for the windows.</p>
+  <h3>The last 4 years (Nov 2022 → Nov 2026)</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Premium · sizing</th><th scope="col">Total P&amp;L</th><th scope="col">Worst point (cash needed)</th><th scope="col">Largest tranche</th><th scope="col">Losing tranches</th></tr></thead>
+      <tbody>
+%%SD_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <p>Holding 50 ETH over the same 4 years made %%SD_HODL%%. %%SD_LOSS%% of the expired straddles lost money, almost all of them in the 2023–24 rally. The recovery rules then sized up into the calmer 2025–26 market, which is why they finished ahead of plain straddles here.</p>
+  <h3>Every 4-year window since February 2020</h3>
+  <div class="scroll card">
+    <table>
+      <thead><tr><th scope="col">Premium · sizing</th><th scope="col">Made money</th><th scope="col">Median</th><th scope="col">Worst 10%</th><th scope="col">Best 10%</th><th scope="col">Largest tranche, median / 90th pct</th><th scope="col">Cash needed at worst point, median</th><th scope="col">Median by start year: 2020 / 2021 / 2022</th></tr></thead>
+      <tbody>
+%%SD_WIN_ROWS%%
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="legend" aria-hidden="true">
+      <span><i class="key-line" style="background:var(--ink-2)"></i>ETH price at start</span>
+      <span><i class="key-line" style="background:var(--s1)"></i>No recovery sizing</span>
+      <span><i class="key-line" style="background:var(--s2)"></i>Rule A</span>
+      <span><i class="key-line" style="background:var(--s3)"></i>Rule B</span>
+    </div>
+    <div class="chart" id="sdts" role="img" aria-label="ETH price at start and 4-year profit or loss of laddered yearly straddles, by start date, for three sizing rules."></div>
+  </div>
+  <p class="note">P&amp;L as % of 50 ETH at the start price, 44% premium. The axis is cut at −300%: windows starting in 2020, when ETH went from about $250 to $4,000, lost many times the starting notional.</p>
+  <h3>How far ETH moved in a year</h3>
+  <div class="two">
+    <div class="scroll card">
+      <table>
+        <thead><tr><th scope="col">Start year</th><th scope="col">Median 1-year move (up or down)</th><th scope="col">Moved more than 44%</th></tr></thead>
+        <tbody>
+%%MV_ROWS%%
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <p>A short straddle priced at 44% wins only when ETH ends the year within ±44% of the strike. Since 2020 that happened on fewer than half of start days. Only the 2022, 2024 and 2025 start years were mostly calm enough.</p>
+      <p>Cash for losses is the other constraint. In the median window the worst point needed %%SD_DD_MED%% of the starting notional, and an exchange would ask for margin long before that.</p>
+    </div>
+  </div>
 </section>
 
 <section aria-labelledby="ld-h">
@@ -809,7 +862,22 @@ function drawLadTS() {
     tipRow(tip, "Ladder, 20%", fp(S.lad20[i], 0));
   });
 }
-function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); }
+function drawSdTS() {
+  const S = D.sdl;
+  const pn = { dom: [-300, 100], ticks: [-300, -200, -100, 0, 100], fmt: pctFmt, h: 120 };
+  drawTS("sdts", S, [
+    pricePanel(),
+    Object.assign({ key: "plain", title: "No recovery sizing: 4-year P&L, % of starting notional", color: "var(--s1)" }, pn),
+    Object.assign({ key: "A", title: "Rule A: 4-year P&L", color: "var(--s2)" }, pn),
+    Object.assign({ key: "B", title: "Rule B: 4-year P&L", color: "var(--s3)" }, pn),
+  ], (tip, i) => {
+    tipRow(tip, "ETH 4 years later", "$" + Math.round(S.send[i]).toLocaleString("en-US"));
+    tipRow(tip, "No recovery sizing", fp(S.plain[i], 0), "var(--s1)");
+    tipRow(tip, "Rule A (max " + S.szA[i].toFixed(1) + "×)", fp(S.A[i], 0), "var(--s2)");
+    tipRow(tip, "Rule B (max " + S.szB[i].toFixed(1) + "×)", fp(S.B[i], 0), "var(--s3)");
+  });
+}
+function drawAll() { drawStrip(); drawExitTS(); drawPlanTS(); drawRangeTS(); drawAnnTS(); drawLadTS(); drawSdTS(); }
 drawAll();
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 120); });
 </script>
