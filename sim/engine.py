@@ -64,6 +64,7 @@ class Strategy:
     mode: str = "exit"              # "exit" or "income"
     hold: bool = False              # pure HODL reference (no options)
     stop_frac: float | None = None  # exit mode: sell everything if price closes this far below the start price
+    call_floor_rel: float | None = None  # only sell calls when price >= start price * this (e.g. 1.0 = never sell below today's price)
 
 
 def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, stake=None, log=False):
@@ -96,6 +97,12 @@ def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, sta
     bench0 = Q0 * S[:, 0] * (1 - costs.exit_cost)
     min_rel = np.zeros(n)       # worst (V - benchmark) along the path
     stopped = np.zeros(n, bool) # exit forced by the stop-loss
+    min_cash = np.zeros(n)      # most USD ever drawn (negative) -> dry powder needed to fund put assignments
+    pay_tot = np.zeros(n)       # option payouts
+    stake_tot = np.zeros(n)
+    fund_tot = np.zeros(n)
+    cost_tot = np.zeros(n)      # perp fees + spot slippage + final unwind
+    maxW = np.full(n, float(Q0))
     rows = []
 
     def fund_rate(t):
@@ -118,6 +125,8 @@ def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, sta
             c = p = np.zeros(n)
         else:
             c = np.where(active & strat.sell_calls, np.clip(np.minimum(lot, E), 0, None), 0.0)
+            if strat.call_floor_rel is not None:
+                c = np.where(S0 >= S[:, 0] * strat.call_floor_rel, c, 0.0)
             p = np.where(active & strat.sell_puts, np.clip(np.minimum(lot, cap - E), 0, None), 0.0)
         call, put = bs_call_put(S0, K, iv[:, t])
         net_c = call * (1 - costs.spread_haircut) - np.minimum(costs.opt_fee * S0, costs.opt_fee_cap * call)
@@ -128,7 +137,11 @@ def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, sta
 
         # carry over the day (staking on wstETH, funding on perp shorts, USD yield)
         on = active | strat.hold
-        cash += np.where(on, W * S0 * stake_rate(t) * DAY + H * S0 * fund_rate(t) * DAY, 0.0)
+        stk = np.where(on, W * S0 * stake_rate(t) * DAY, 0.0)
+        fnd = np.where(on, H * S0 * fund_rate(t) * DAY, 0.0)
+        cash += stk + fnd
+        stake_tot += stk
+        fund_tot += fnd
         cash += cash * carry.usd_apr * DAY
         # perp mark-to-market (short)
         cash -= H * (S1 - S0)
@@ -136,11 +149,14 @@ def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, sta
         # settlement
         up = S1 > K
         dn = S1 < K
-        cash -= c * np.maximum(S1 - K, 0) + p * np.maximum(K - S1, 0)
+        pay = c * np.maximum(S1 - K, 0) + p * np.maximum(K - S1, 0)
+        cash -= pay
+        pay_tot += pay
         # up day: hedge c more ETH with perp short
         dH_up = np.where(up, c, 0.0)
         H += dH_up
         cash -= dH_up * S1 * costs.perp_fee
+        cost_tot += dH_up * S1 * costs.perp_fee
         # down day: take p back -> cover perp first, then buy new wstETH
         take = np.where(dn, p, 0.0)
         cover = np.minimum(take, H)
@@ -149,6 +165,9 @@ def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, sta
         buy = take - cover
         W += buy
         cash -= buy * S1 * (1 + costs.spot_slip)
+        cost_tot += cover * S1 * costs.perp_fee + buy * S1 * costs.spot_slip
+        maxW = np.maximum(maxW, W)
+        min_cash = np.minimum(min_cash, cash)
         n_up += (up & (c > 0)).astype(int)
         n_dn += (dn & (p > 0)).astype(int)
 
@@ -173,6 +192,7 @@ def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, sta
             if done.any():
                 # unwind: sell wstETH, close perp (delta-neutral -> value locked)
                 unwind = W * S1 * costs.exit_cost + H * S1 * costs.perp_fee
+                cost_tot += np.where(done, unwind, 0.0)
                 val = W * S1 + cash - unwind
                 tau = np.where(done, t + 1, tau)
                 S_tau = np.where(done, S1, S_tau)
@@ -183,8 +203,13 @@ def run(S, iv, Q0, strat: Strategy, costs=Costs(), carry=Carry(), fund=None, sta
                 active &= ~done
 
     S_T = S[:, -1]
-    V_T = W * S_T + cash - (W * S_T * costs.exit_cost + H * S_T * costs.perp_fee)  # liquidation value
-    out = dict(V_T=V_T, bench=bench0, rel=V_T - bench0, rel_pct=V_T / bench0 - 1,
+    unwind_T = W * S_T * costs.exit_cost + H * S_T * costs.perp_fee
+    cost_tot += unwind_T
+    V_T = W * S_T + cash - unwind_T  # liquidation value
+    benchT = bench0 * (1 + carry.usd_apr * DAY) ** T
+    out = dict(V_T=V_T, bench=benchT, rel=V_T - benchT, rel_pct=V_T / benchT - 1,
+               min_cash=min_cash, maxW=maxW, W_T=W, H_T=H, S_T=S_T,
+               pnl=dict(premium=prem_tot, payout=pay_tot, staking=stake_tot, funding=fund_tot, costs=cost_tot),
                cleared=tau > 0, tau=tau, S_tau=S_tau, V_tau=V_tau,
                exit_px=np.where(tau > 0, V_tau, V_T) / Q0,
                maxE=maxE, E_T=W - H, stopped=stopped, prem=prem_tot, n_up=n_up, n_dn=n_dn, min_rel=min_rel)

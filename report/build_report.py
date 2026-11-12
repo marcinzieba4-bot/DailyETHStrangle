@@ -239,12 +239,125 @@ for name, res in R["illustrative"].items():
 V["IL_ROWS"] = "\n".join(il)
 V["IL_DETAILS"] = "\n".join(details)
 
+# ---- clarified plan: accumulate on dips, distribute on rallies ----
+A = json.load(open(os.path.join(ROOT, "results", "accumulate.json")))
+PV = [("6.25 ETH/day", "Your plan, 6.25 ETH/day"), ("2.5 ETH/day", "Your plan, 2.5 ETH/day"),
+      ("15.6 ETH/day", "Your plan, 15.6 ETH/day"), ("6.25 ETH/day, max 2x", "6.25/day, max 125 ETH"),
+      ("6.25 ETH/day, sell only >= start, max 2x", "Fixed: sell only ≥ $2,000, max 125 ETH")]
+
+
+def hm_cell(m, med, p5, scale=60):
+    a = min(abs(m), scale) / scale
+    tone = "p" if m > 0 else "n"
+    return (f"<td class='hm' style='--a:{a:.2f}' data-tone='{tone}'><span class='big'>{pct(m, 0)}</span>"
+            f"<span class='sm'>med {pct(med, 0)} · 5%: {pct(p5, 0)}</span></td>")
+
+
+rows = []
+blocks = [(k, v, v["desc"]) for k, v in A["mc"].items()]
+blocks += [("History, 1-year windows", A["hist"]["365"], f"{A['hist']['365']['n']:,} starts, Mar 2021 – Nov 2025"),
+           ("History, 2-year windows", A["hist"]["730"], f"{A['hist']['730']['n']:,} starts, Mar 2021 – Nov 2024")]
+for name, blk, desc in blocks:
+    h = blk["hodl"]
+    cells = [hm_cell(h["mean"], h["median"], h["p5"])]
+    for k, _ in PV:
+        x = blk[k]
+        cells.append(hm_cell(x["mean"], x["median"], x["p5"]))
+    rows.append(f"<tr><th scope='row'>{html.escape(name)}<span class='sm'>{html.escape(desc)}</span></th>{''.join(cells)}</tr>")
+V["PLAN_HEAD"] = "<th scope='col'>Keep all 50 wstETH</th>" + "".join(f"<th scope='col'>{html.escape(l)}</th>" for _, l in PV)
+V["PLAN_ROWS"] = "\n".join(rows)
+
+nvA = A["mc"]["No view (random walk)"]
+rpA = A["mc"]["2022 replay: -60% in 6 months, then flat"]
+h1 = A["hist"]["365"]
+cash_rows = []
+for k, l in PV:
+    x, r22, hh = nvA[k], rpA[k], h1[k]
+    cash_rows.append(
+        f"<tr><th scope='row'>{html.escape(l)}</th><td>{x['cleared']*100:.0f}%<span class='sm'>history {hh['cleared']*100:.0f}%</span></td>"
+        f"<td>{px(x['exit_px_cleared_med'])}<span class='sm'>history {pct(hh['exit_prem_cleared_med'], 0)} vs start</span></td>"
+        f"<td>{x['eth_end_med']:.0f} / {x['eth_end_p95']:.0f}</td>"
+        f"<td>{x['maxW_med']:.0f} / {x['maxW_p95']:.0f}</td>"
+        f"<td>{usd(x['cash_need_med'])} / {usd(x['cash_need_p95'])}</td>"
+        f"<td class='neg'>{r22['maxW_med']:.0f} ETH<span class='sm'>{usd(r22['cash_need_med'])} cash · {usd(r22['mean']/100*SELL, True)}</span></td></tr>")
+V["CASH_ROWS"] = "\n".join(cash_rows)
+
+pk = "6.25 ETH/day"
+pnl_rows = []
+for lab, key in [("Option premium minus payouts", "pnl_edge"), ("Staking on all wstETH held", "pnl_staking"),
+                 ("Perp funding on the hedged part", "pnl_funding"), ("Fees, slippage, unwind", "pnl_costs"),
+                 ("ETH price moves × your position", "pnl_inventory"), ("Total vs selling today", "mean")]:
+    vals = [A["mc"]["No view (random walk)"][pk][key], A["mc"]["Mean-reverts to $2,000"][pk][key],
+            A["mc"]["2022 replay: -60% in 6 months, then flat"][pk][key], A["hist"]["365"][pk][key]]
+    tag = "th" if key == "mean" else "th"
+    pnl_rows.append(f"<tr><{tag} scope='row'>{'<strong>' + lab + '</strong>' if key == 'mean' else lab}</{tag}>" + "".join(
+        f"<td class='{'pos' if v > 0 else 'neg'}'>{pct(v, 1)}</td>" for v in vals) + "</tr>")
+V["PNL_ROWS"] = "\n".join(pnl_rows)
+
+# mean-reversion test on 08:00 settlements since daily data starts
+pr_all = pd.read_csv(os.path.join(ROOT, "data", "eth_delivery_prices.csv"), parse_dates=["date"]).set_index("date")["price"]
+pr_all = pr_all[pr_all.index >= "2020-02-18"]
+lr = np.log(pr_all)
+r1 = lr.diff().dropna()
+V["MR_SINCE"] = pr_all.index[0].strftime("%b %Y")
+V["MR_AC1"] = f"{r1.autocorr(1):+.2f}"
+for k in (10, 60, 250):
+    V[f"MR_VR{k}"] = f"{lr.diff(k).dropna().var() / (k * r1.var()):.2f}"
+sg = np.sign(r1)
+V["MR_PUP"] = f"{((sg > 0) & (sg.shift() < 0)).sum() / (sg.shift() < 0).sum() * 100:.0f}%"
+
+x = nvA[pk]
+V["PL_NV_MEAN"] = pct(x["mean"])
+V["PL_NV_MED"] = pct(x["median"])
+V["PL_NV_P5"] = pct(x["p5"], 0)
+V["PL_NV_BEAT"] = f"{x['beat']*100:.0f}%"
+V["PL_NV_CLR"] = f"{x['cleared']*100:.0f}%"
+V["PL_NV_EXIT"] = px(x["exit_px_cleared_med"])
+V["PL_NV_NOTCLR"] = pct(x["rel_notcleared_med"], 0)
+V["PL_NV_CASH"] = usd(x["cash_need_med"])
+V["PL_NV_CASH95"] = usd(x["cash_need_p95"])
+V["PL_NV_EDGE"] = pct(x["pnl_edge"])
+V["PL_NV_STAKE"] = pct(x["pnl_staking"])
+V["PL_NV_USD4"] = pct(nvA["usd4"][pk]["mean"])
+V["PL_MR_MEAN"] = pct(A["mc"]["Mean-reverts to $2,000"][pk]["mean"], 0)
+V["PL_22_MEAN"] = pct(rpA[pk]["mean"], 0)
+V["PL_22_USD"] = usd(rpA[pk]["mean"] / 100 * SELL, True)
+V["PL_22_ETH"] = f"{rpA[pk]['maxW_med']:.0f}"
+V["PL_22_CASH"] = usd(rpA[pk]["cash_need_med"])
+V["PL_BULL"] = pct(A["mc"]["Bull +80% in a year"][pk]["mean"], 0)
+V["PL_BULL_HODL"] = pct(A["mc"]["Bull +80% in a year"]["hodl"]["mean"], 0)
+V["PL_H_MEAN"] = pct(h1[pk]["mean"], 0)
+V["PL_H_MED"] = pct(h1[pk]["median"], 0)
+V["PL_H_P5"] = pct(h1[pk]["p5"], 0)
+V["PL_H_BEAT"] = f"{h1[pk]['beat']*100:.0f}%"
+V["PL_H_HODL_MEAN"] = pct(h1["hodl"]["mean"], 0)
+V["PL_H_HODL_MED"] = pct(h1["hodl"]["median"], 0)
+V["PL_H_CLR"] = f"{h1[pk]['cleared']*100:.0f}%"
+V["PL_H2_MEAN"] = pct(A["hist"]["730"][pk]["mean"], 0)
+V["PL_H2_HODL"] = pct(A["hist"]["730"]["hodl"]["mean"], 0)
+dr = A["mc"]["Dip -35%, then recovers to $2,400"]
+V["DIP_CAP"] = pct(dr["6.25 ETH/day, max 2x"]["mean"], 0)
+V["DIP_CAP_EXIT"] = px(dr["6.25 ETH/day, max 2x"]["exit_px_cleared_med"])
+V["DIP_FIX"] = pct(dr["6.25 ETH/day, sell only >= start, max 2x"]["mean"], 0)
+fx = "6.25 ETH/day, sell only >= start, max 2x"
+V["FIX_NV_MEAN"] = pct(nvA[fx]["mean"], 0)
+V["FIX_MR"] = pct(A["mc"]["Mean-reverts to $2,000"][fx]["mean"], 0)
+V["FIX_H_MEAN"] = pct(h1[fx]["mean"], 0)
+V["FIX_H_MED"] = pct(h1[fx]["median"], 0)
+V["FIX_H_P5"] = pct(h1[fx]["p5"], 0)
+V["FIX_22"] = pct(rpA[fx]["mean"], 0)
+V["FIX_CASH95"] = usd(nvA[fx]["cash_need_p95"])
+V["FIX_EXIT"] = px(nvA[fx]["exit_px_cleared_med"])
+V["FIX_CLR"] = f"{nvA[fx]['cleared']*100:.0f}%"
+
 # ---- chart data ----
 data = dict(
     strip=strip,
     ts=dict(date=ts["date"].tolist(), price=[round(x, 2) for x in ts["price"]],
             A=[round(x, 2) for x in ts["A. Call-only exit"]], B=[round(x, 2) for x in ts["B. Your plan, adds up to 2x"]],
             dA=ts["A. Call-only exit|days"].tolist(), dB=ts["B. Your plan, adds up to 2x|days"].tolist()),
+    plan=dict(date=h1["ts"]["date"], price=h1["ts"]["price"], hodl=h1["ts"]["hodl"], plan=h1["ts"][pk],
+              fix=h1["ts"][fx], planW=h1["ts"][pk + "|maxW"], fixW=h1["ts"][fx + "|maxW"]),
 )
 out = TPL.replace("__DATA__", json.dumps(data, separators=(",", ":")))
 for k, v in V.items():

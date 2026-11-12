@@ -25,13 +25,28 @@ Economics: an ITM call + perp short at settlement = selling at the strike; an IT
 * Starting right after a >5% 4-day drop (as on 12 Nov 2026) roughly doubles the tail (A worst 5%: −12% vs −6%).
 * Conclusion: to be out of ETH, sell today. If you want to be paid to wait, use A with a stop; never sell the put leg while exiting.
 
+## The dip-buying plan (`run_accumulate.py`)
+
+Every day sell an ATM put and an ATM call of `lot` ETH. Put assigned → keep the extra wstETH (no cap).
+Call assigned → hedge that much with an ETH-PERP short (wstETH keeps staking). Done when fully hedged.
+One-year Monte Carlo regimes plus 1- and 2-year historical windows (2021–2026).
+
+* ETH has not mean-reverted since 2020: lag-1 autocorrelation ≈ 0, variance ratios 1.10 (10d) to 1.51 (250d).
+* 6.25 ETH/day, no view: mean +3.4%/yr vs selling today (−1.1% if spare cash could earn 4%), median +12%,
+  worst 5% −108%. Options add ~0.7%, staking ~2.6%; the rest is ETH price × a position that grows in sell-offs.
+  Needs $122k extra USD (median), $336k (worst 5%).
+* History 1-year windows: beat selling 68%, median +20%, worst 5% −45%. 2022-style slide: −124% of the position.
+* The rule sells on every up day regardless of price; selling calls only ≥ $2,000 and capping at 125 ETH fixes
+  the "sells the rebound cheaply" problem (history 1-year median +39%, but worst 5% −104%).
+
 ## Layout
 
 ```
 sim/engine.py      vectorised strategy engine (options, perp hedge, carry, costs, exit/income modes)
 sim/data.py        Deribit settlement prices, DVOL, funding; live snapshot
 sim/scenarios.py   illustrative paths, bootstrap Monte Carlo regimes, historical rolling windows
-run_all.py         runs everything -> results/results.json
+run_all.py         quick-exit variants -> results/results.json
+run_accumulate.py  dip-buying plan     -> results/accumulate.json
 report/            HTML report builder -> results/report.html
 data/              cached market data (Deribit public API)
 ```
@@ -40,7 +55,8 @@ data/              cached market data (Deribit public API)
 
 ```bash
 pip install numpy pandas scipy
-python3 run_all.py --refresh     # re-download data + live quotes, then simulate
+python3 run_all.py --refresh     # re-download data + live quotes, then simulate quick exits
+python3 run_accumulate.py        # dip-buying plan
 python3 report/build_report.py   # rebuild results/report.html
 ```
 
